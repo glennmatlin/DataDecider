@@ -1,0 +1,26 @@
+# configs/data_configs/data_curation.yaml
+data_curation:
+  # DataDecide parameters
+  proxy_model_size: "4M"  # Using 4M as our proxy model
+  proxy_training_steps: 1000
+  num_proxy_experiments: 5
+  
+  # Data sources
+  data_sources:
+    - path: "./data/processed/olmo_4m_400M_tokens"  # Pre-tokenized dataset
+      weight: 1.0
+      format: "huggingface"  # Indicates pre-tokenized HF dataset
+  
+  # Preprocessing
+  preprocessing:
+    tokenizer: "EleutherAI/gpt-neox-20b"  # Match our dataset tokenizer
+    max_length: 2048
+    concatenate_documents: true
+    add_eos_token: true
+    
+  # Evaluation metrics for data selection
+  evaluation_metrics:
+    - "perplexity"
+    - "diversity"
+    - "quality_score"
+    - "deduplication_rate"

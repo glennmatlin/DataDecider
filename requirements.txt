@@ -1,0 +1,28 @@
+# OLMo Training Pipeline Requirements
+
+# Core ML frameworks
+torch>=2.0.0
+transformers>=4.30.0
+datasets>=2.14.0
+accelerate>=0.20.0
+
+# Training utilities
+wandb>=0.15.0  # For experiment tracking
+tensorboard>=2.13.0  # For local logging
+rich>=13.0.0  # For enhanced progress bars and terminal output
+
+# Data processing
+numpy>=1.24.0
+scipy>=1.10.0
+scikit-learn>=1.3.0
+tqdm>=4.65.0
+
+# Configuration
+pyyaml>=6.0
+
+# Tokenization
+tokenizers>=0.13.0
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.0.0

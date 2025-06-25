@@ -1,0 +1,25 @@
+# configs/model_configs/olmo_4m.yaml
+model:
+  name: "olmo-4m"
+  vocab_size: 50254  # GPT-NeoX-20B tokenizer exact size
+  hidden_size: 64
+  num_hidden_layers: 8
+  num_attention_heads: 8
+  intermediate_size: 256
+  hidden_act: "swiglu"
+  hidden_dropout_prob: 0.0
+  attention_probs_dropout_prob: 0.0
+  max_position_embeddings: 2048
+  initializer_range: 0.02
+  layer_norm_eps: 1e-12
+  use_cache: true
+  rope_theta: 10000.0
+  use_bias: false
+  tie_word_embeddings: true
+
+training_params:
+  actual_model_params: "3.7M"  # Actual parameter count
+  batch_size: 32
+  learning_rate: 1.4e-02  # From OLMo paper
+  training_steps: 5725
+  tokens_trained: "0.4B"  # 400M tokens

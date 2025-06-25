@@ -192,3 +192,19 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Data directories (large files)
+data/raw/
+data/processed/
+!data/raw/arxiv_sample.json.gz
+!data/README.md
+
+# Training artifacts
+checkpoints/
+logs/
+wandb/
+outputs/
+
+# OS files
+.DS_Store
+Thumbs.db

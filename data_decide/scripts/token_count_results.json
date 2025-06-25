@@ -1,0 +1,10 @@
+{
+  "file": "../../tests/test_data/arxiv-0098.json.gz",
+  "tokenizer": "EleutherAI/gpt-neox-20b",
+  "total_documents": 12966,
+  "total_tokens": 243267341,
+  "avg_tokens_per_doc": 18761.942079284283,
+  "required_tokens_4m": 400000000,
+  "sufficient_data": false,
+  "epochs_needed": 1.6442815478465727
+}

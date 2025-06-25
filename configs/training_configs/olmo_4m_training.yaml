@@ -1,0 +1,69 @@
+# configs/training_configs/olmo_4m_training.yaml
+# Training configuration for 4M OLMo model following DataDecide methodology
+training:
+  # Model selection
+  model_size: "4M"
+  
+  # Training hyperparameters from OLMo paper
+  learning_rate: 1.4e-02  # Exact value from paper
+  batch_size: 32
+  gradient_accumulation_steps: 1
+  num_train_epochs: 1  # Overridden by max_steps
+  max_steps: 5725  # Exact steps for 400M tokens
+  warmup_steps: 57  # 1% of training steps
+  
+  # Optimizer settings (from OLMo paper)
+  optimizer: "adamw"
+  weight_decay: 0.1
+  adam_beta1: 0.9
+  adam_beta2: 0.95  # OLMo uses 0.95 not 0.999
+  adam_epsilon: 1e-8
+  max_grad_norm: 1.0
+  
+  # Learning rate schedule
+  lr_scheduler_type: "cosine"
+  
+  # Mixed precision for efficiency
+  fp16: true
+  bf16: false
+  
+  # Checkpointing
+  save_strategy: "steps"
+  save_steps: 500  # Save every 500 steps
+  save_total_limit: 10
+  load_best_model_at_end: false
+  
+  # Logging
+  logging_steps: 10
+  logging_first_step: true
+  report_to: ["wandb"]  # Enable Weights & Biases logging
+  
+  # Weights & Biases configuration
+  wandb_project: "olmo-4m-datadecide"
+  wandb_name: "olmo-4m-arxiv-400M"
+  wandb_tags: ["olmo", "4m", "arxiv", "datadecide", "proxy-experiment"]
+  wandb_notes: "Training 4M OLMo model with DataDecide methodology on 400M arXiv tokens"
+  
+  # Evaluation
+  evaluation_strategy: "steps"
+  eval_steps: 250  # Evaluate every 250 steps
+  per_device_eval_batch_size: 32
+  
+  # DataDecide specific metrics
+  track_proxy_metrics: true
+  proxy_metrics_steps: 50  # Compute DataDecide metrics every 50 steps
+  
+  # Distributed training
+  ddp_find_unused_parameters: false
+  gradient_checkpointing: false  # Not needed for 4M model
+  
+  # Data
+  max_length: 2048
+  num_workers: 4
+  
+  # Random seed
+  seed: 42
+  
+  # Output
+  output_dir: "./checkpoints/olmo_4m_datadecide"
+  logging_dir: "./logs/olmo_4m_datadecide"

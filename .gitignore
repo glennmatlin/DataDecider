@@ -201,9 +201,12 @@ data/processed/
 
 # Training artifacts
 checkpoints/
+checkpoint-*/
 logs/
 wandb/
 outputs/
+**/checkpoint-*/
+**/final_model/
 
 # Dataset artifacts
 *.arrow

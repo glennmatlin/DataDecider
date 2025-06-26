@@ -1,9 +1,10 @@
 """Configuration utilities for OLMo training."""
 
-import yaml
 import json
 from pathlib import Path
-from typing import Dict, Any, Union, Optional
+from typing import Any, Dict, Optional, Union
+
+import yaml
 
 
 def load_config(config_path: Union[str, Path]) -> Dict[str, Any]:
@@ -54,9 +55,7 @@ def save_config(config: Dict[str, Any], config_path: Union[str, Path]) -> None:
         raise ValueError(f"Unsupported config file format: {config_path.suffix}")
 
 
-def merge_configs(
-    base_config: Dict[str, Any], override_config: Dict[str, Any]
-) -> Dict[str, Any]:
+def merge_configs(base_config: Dict[str, Any], override_config: Dict[str, Any]) -> Dict[str, Any]:
     """
     Recursively merge two configuration dictionaries.
 
@@ -78,9 +77,7 @@ def merge_configs(
     return merged
 
 
-def validate_config(
-    config: Dict[str, Any], schema: Optional[Dict[str, Any]] = None
-) -> bool:
+def validate_config(config: Dict[str, Any], schema: Optional[Dict[str, Any]] = None) -> bool:
     """
     Validate configuration against a schema.
 
@@ -107,9 +104,7 @@ def validate_config(
     return True
 
 
-def get_model_config(
-    model_size: str, config_dir: Union[str, Path] = "configs/model_configs"
-) -> Dict[str, Any]:
+def get_model_config(model_size: str, config_dir: Union[str, Path] = "configs/model_configs") -> Dict[str, Any]:
     """
     Load model configuration for a specific size.
 

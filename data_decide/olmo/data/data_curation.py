@@ -1,12 +1,13 @@
 # src/data/data_curation.py
+import hashlib
 import json
 import os
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 import numpy as np
 from datasets import Dataset
-from transformers import AutoTokenizer
 from tqdm import tqdm
-import hashlib
+from transformers import AutoTokenizer
 
 
 class DataDecideCurator:
@@ -35,7 +36,7 @@ class DataDecideCurator:
         dataset_info_path = os.path.join(self.data_path, "dataset_dict.json")
         if os.path.exists(dataset_info_path):
             return self._load_huggingface_dataset()
-        
+
         # Otherwise, load JSON/JSONL files
         data_files = []
         for file in os.listdir(self.data_path):
@@ -56,17 +57,17 @@ class DataDecideCurator:
                         all_data.append(json.loads(line))
 
         return all_data
-    
+
     def _load_huggingface_dataset(self) -> List[Dict[str, Any]]:
         """Load pre-tokenized HuggingFace dataset."""
         from datasets import DatasetDict
-        
+
         # Load the dataset
         dataset_dict = DatasetDict.load_from_disk(self.data_path)
-        
+
         # For DataDecide, we'll use the training split
-        train_dataset = dataset_dict['train']
-        
+        train_dataset = dataset_dict["train"]
+
         # Convert to list of dicts format expected by rest of pipeline
         # Since this is pre-tokenized, we'll create synthetic "text" from tokens
         all_data = []
@@ -78,10 +79,10 @@ class DataDecideCurator:
                 "uuid": f"doc-{i}",
                 "input_ids": item["input_ids"],
                 "attention_mask": item["attention_mask"],
-                "labels": item["labels"]
+                "labels": item["labels"],
             }
             all_data.append(doc)
-        
+
         return all_data
 
     def compute_data_statistics(self, data: List[Dict[str, Any]]) -> Dict[str, float]:
@@ -117,46 +118,45 @@ class DataDecideCurator:
 
         return stats
 
-    def create_proxy_experiments(
-        self, data: List[Dict[str, Any]], num_experiments: int = 5
-    ) -> List[Dataset]:
+    def create_proxy_experiments(self, data: List[Dict[str, Any]], num_experiments: int = 5) -> List[Dataset]:
         """Create small-scale proxy datasets for DataDecide experiments."""
         # For pre-tokenized data, we'll create different data mixtures
         # This follows the DataDecide paper's approach of testing different data recipes
-        
+
         # Check if data is pre-tokenized
         is_pretokenized = "input_ids" in data[0] if data else False
-        
+
         if is_pretokenized:
             # For pre-tokenized data, load the full dataset and create different subsets
             from datasets import DatasetDict
+
             dataset_dict = DatasetDict.load_from_disk(self.data_path)
-            train_dataset = dataset_dict['train']
-            
+            train_dataset = dataset_dict["train"]
+
             proxy_datasets = []
             dataset_size = len(train_dataset)
-            
+
             # Create different data recipes by sampling different portions
             sampling_strategies = [
                 ("random_10k", 10000),
                 ("random_20k", 20000),
                 ("random_40k", 40000),
                 ("stratified_20k", 20000),  # Will implement stratified sampling
-                ("full_subset", min(50000, dataset_size))
+                ("full_subset", min(50000, dataset_size)),
             ]
-            
+
             for i, (strategy_name, sample_size) in enumerate(sampling_strategies[:num_experiments]):
                 if sample_size > dataset_size:
                     sample_size = dataset_size
-                
+
                 # Random sampling
                 indices = np.random.choice(dataset_size, size=sample_size, replace=False)
                 subset = train_dataset.select(indices)
-                
+
                 proxy_datasets.append(subset)
-            
+
             return proxy_datasets
-        
+
         # Original implementation for non-tokenized data
         proxy_datasets = []
 
@@ -164,19 +164,13 @@ class DataDecideCurator:
             # Different sampling strategies
             if i == 0:
                 # Random sampling
-                sampled = np.random.choice(
-                    data, size=min(10000, len(data)), replace=False
-                )
+                sampled = np.random.choice(data, size=min(10000, len(data)), replace=False)
             elif i == 1:
                 # Length-based sampling (prefer medium length)
                 lengths = np.array([len(doc["text"]) for doc in data])
-                weights = np.exp(
-                    -((lengths - np.median(lengths)) ** 2) / (2 * np.std(lengths) ** 2)
-                )
+                weights = np.exp(-((lengths - np.median(lengths)) ** 2) / (2 * np.std(lengths) ** 2))
                 weights /= weights.sum()
-                sampled = np.random.choice(
-                    data, size=min(10000, len(data)), replace=False, p=weights
-                )
+                sampled = np.random.choice(data, size=min(10000, len(data)), replace=False, p=weights)
             elif i == 2:
                 # Quality-based sampling (using simple heuristics)
                 sampled = [doc for doc in data if self._quality_filter(doc)][:10000]
@@ -188,9 +182,7 @@ class DataDecideCurator:
                 sampled = self._mixed_strategy_sample(data, 10000)
 
             # Convert to HuggingFace Dataset
-            dataset = Dataset.from_list(
-                [{"text": doc["text"], "uuid": doc["uuid"]} for doc in sampled]
-            )
+            dataset = Dataset.from_list([{"text": doc["text"], "uuid": doc["uuid"]} for doc in sampled])
             proxy_datasets.append(dataset)
 
         return proxy_datasets
@@ -207,12 +199,10 @@ class DataDecideCurator:
             return False
         return True
 
-    def _diversity_sample(
-        self, data: List[Dict[str, Any]], n_samples: int
-    ) -> List[Dict[str, Any]]:
+    def _diversity_sample(self, data: List[Dict[str, Any]], n_samples: int) -> List[Dict[str, Any]]:
         """Sample for maximum diversity using clustering."""
-        from sklearn.feature_extraction.text import TfidfVectorizer
         from sklearn.cluster import MiniBatchKMeans
+        from sklearn.feature_extraction.text import TfidfVectorizer
 
         # Sample subset for efficiency
         subset = np.random.choice(data, size=min(50000, len(data)), replace=False)
@@ -236,9 +226,7 @@ class DataDecideCurator:
 
         return sampled
 
-    def _mixed_strategy_sample(
-        self, data: List[Dict[str, Any]], n_samples: int
-    ) -> List[Dict[str, Any]]:
+    def _mixed_strategy_sample(self, data: List[Dict[str, Any]], n_samples: int) -> List[Dict[str, Any]]:
         """Combine multiple sampling strategies."""
         strategies = [
             lambda d, n: np.random.choice(d, size=n, replace=False),
@@ -254,9 +242,7 @@ class DataDecideCurator:
 
         return sampled[:n_samples]
 
-    def evaluate_proxy_datasets(
-        self, proxy_datasets: List[Dataset]
-    ) -> Dict[str, float]:
+    def evaluate_proxy_datasets(self, proxy_datasets: List[Dataset]) -> Dict[str, float]:
         """Evaluate proxy datasets to predict performance."""
         scores = {}
 
@@ -277,7 +263,7 @@ class DataDecideCurator:
 
     def _compute_proxy_perplexity(self, dataset: Dataset) -> float:
         """Compute perplexity using a small proxy model.
-        
+
         This follows the DataDecide methodology where we use small-scale
         experiments to predict performance at larger scales.
         """
@@ -287,12 +273,12 @@ class DataDecideCurator:
             all_tokens = []
             for item in dataset.select(range(min(1000, len(dataset)))):
                 all_tokens.extend(item["input_ids"])
-            
+
             # Calculate token frequency distribution
             token_counts = {}
             for token in all_tokens:
                 token_counts[token] = token_counts.get(token, 0) + 1
-            
+
             # Calculate entropy
             total_tokens = len(all_tokens)
             entropy = 0
@@ -300,18 +286,18 @@ class DataDecideCurator:
                 prob = count / total_tokens
                 if prob > 0:
                     entropy -= prob * np.log2(prob)
-            
+
             # Convert entropy to perplexity-like score (2^entropy)
             # Normalize to typical perplexity range
             perplexity = min(200, max(50, 2 ** (entropy / 4)))
             return perplexity
-        
+
         # For text data, use simple heuristics
         return 100.0  # Default middle-range perplexity
 
     def _compute_diversity_score(self, dataset: Dataset) -> float:
         """Compute diversity score of dataset.
-        
+
         Following DataDecide, we measure how diverse the data is
         to predict if it will lead to better model performance.
         """
@@ -321,35 +307,35 @@ class DataDecideCurator:
             sample_size = min(5000, len(dataset))
             for i in range(sample_size):
                 all_tokens.extend(dataset[i]["input_ids"])
-            
+
             unique_tokens = len(set(all_tokens))
             total_tokens = len(all_tokens)
-            
+
             # Type-token ratio (normalized)
             ttr = unique_tokens / total_tokens if total_tokens > 0 else 0
-            
+
             # Calculate n-gram diversity (bigrams)
             bigrams = set()
             for i in range(len(all_tokens) - 1):
-                bigrams.add((all_tokens[i], all_tokens[i+1]))
-            
+                bigrams.add((all_tokens[i], all_tokens[i + 1]))
+
             bigram_diversity = len(bigrams) / (len(all_tokens) - 1) if len(all_tokens) > 1 else 0
-            
+
             # Combined diversity score
             diversity = 0.7 * ttr + 0.3 * bigram_diversity
             return min(1.0, diversity * 2)  # Scale to 0-1 range
-        
+
         # For text data
         texts = [item["text"] for item in dataset.select(range(min(1000, len(dataset))))]
         vocab = set()
         for text in texts:
             vocab.update(text.lower().split())
-        
+
         return min(1.0, len(vocab) / 10000)  # Normalize by expected vocab size
 
     def _compute_quality_score(self, dataset: Dataset) -> float:
         """Compute quality score based on various heuristics.
-        
+
         For DataDecide, quality is a key factor in predicting
         which data will produce better models.
         """
@@ -366,11 +352,11 @@ class DataDecideCurator:
                 else:
                     length = len(tokens)
                 lengths.append(length)
-            
+
             # Good quality data has consistent, reasonable length sequences
             avg_length = np.mean(lengths)
             std_length = np.std(lengths)
-            
+
             # Quality based on length consistency and reasonable average
             if 500 < avg_length < 1800 and std_length < 500:
                 quality = 0.9
@@ -378,9 +364,9 @@ class DataDecideCurator:
                 quality = 0.8
             else:
                 quality = 0.7
-            
+
             return quality
-        
+
         # For text data, use original heuristics
         return 0.85  # Default high quality for arXiv
 

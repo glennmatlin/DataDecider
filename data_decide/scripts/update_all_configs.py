@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Update all OLMo configurations to match the paper exactly."""
 
-import yaml
 from pathlib import Path
+
+import yaml
 
 # Exact hyperparameters from the OLMo paper
 OLMO_CONFIGS = {
@@ -148,13 +149,14 @@ OLMO_CONFIGS = {
     },
 }
 
+
 def create_model_config(model_name: str, params: dict) -> dict:
     """Create model configuration matching OLMo paper."""
-    
+
     # Calculate intermediate size (usually 4x hidden for SwiGLU)
     # For SwiGLU: intermediate = hidden * 8/3, but rounded to nice numbers
     intermediate_size = int(params["hidden_size"] * 4)
-    
+
     config = {
         "model": {
             "name": f"olmo-{model_name.lower()}",
@@ -175,23 +177,23 @@ def create_model_config(model_name: str, params: dict) -> dict:
             "tie_word_embeddings": True,
         },
         "training_params": {
-            "actual_model_params": f"{params['actual_params']/1e6:.1f}M",
+            "actual_model_params": f"{params['actual_params'] / 1e6:.1f}M",
             "batch_size": params["batch_size"],
             "learning_rate": params["learning_rate"],
             "training_steps": params["training_steps"],
-            "tokens_trained": f"{params['tokens_trained']/1e9:.1f}B",
-        }
+            "tokens_trained": f"{params['tokens_trained'] / 1e9:.1f}B",
+        },
     }
-    
+
     return config
+
 
 def create_training_config(model_name: str, params: dict) -> dict:
     """Create training configuration for a model."""
-    
+
     config = {
         "training": {
             "model_size": model_name,
-            
             # Training hyperparameters from paper
             "learning_rate": params["learning_rate"],
             "batch_size": params["batch_size"],
@@ -199,7 +201,6 @@ def create_training_config(model_name: str, params: dict) -> dict:
             "num_train_epochs": 1,  # Overridden by max_steps
             "max_steps": params["training_steps"],
             "warmup_steps": int(params["training_steps"] * 0.01),  # 1% warmup
-            
             # Optimizer settings (Adam with specific betas)
             "optimizer": "adamw",
             "weight_decay": 0.1,
@@ -207,77 +208,70 @@ def create_training_config(model_name: str, params: dict) -> dict:
             "adam_beta2": 0.95,
             "adam_epsilon": 1e-8,
             "max_grad_norm": 1.0,
-            
             # Learning rate schedule
             "lr_scheduler_type": "cosine",
-            
             # Mixed precision
             "fp16": True,
             "bf16": False,
-            
             # Checkpointing
             "save_strategy": "steps",
             "save_steps": max(100, params["training_steps"] // 10),
             "save_total_limit": 5,
             "load_best_model_at_end": False,
-            
             # Logging
             "logging_steps": 10,
             "logging_first_step": True,
             "report_to": [],  # Empty for testing
-            
             # Evaluation
             "evaluation_strategy": "steps",
             "eval_steps": max(100, params["training_steps"] // 20),
             "per_device_eval_batch_size": min(params["batch_size"], 32),
-            
             # Distributed training
             "ddp_find_unused_parameters": False,
             "gradient_checkpointing": False,  # Not needed for small models
-            
             # Data
             "max_length": 2048,
             "num_workers": 4,
-            
             # Random seed
             "seed": 42,
         }
     }
-    
+
     return config
+
 
 def main():
     """Update all configuration files."""
-    
+
     # Base directory for configs
     config_dir = Path("../configs")
     model_config_dir = config_dir / "model_configs"
     training_config_dir = config_dir / "training_configs"
-    
+
     print("Creating OLMo configuration files based on paper...")
-    print("="*70)
-    
+    print("=" * 70)
+
     # Create all model configs
     for model_name, params in OLMO_CONFIGS.items():
         # Model configuration
         model_config = create_model_config(model_name, params)
         model_file = model_config_dir / f"olmo_{model_name.lower()}.yaml"
-        
+
         print(f"\nCreating {model_file}")
-        with open(model_file, 'w') as f:
+        with open(model_file, "w") as f:
             yaml.dump(model_config, f, default_flow_style=False, sort_keys=False)
-        
+
         # Training configuration
         training_config = create_training_config(model_name, params)
         training_file = training_config_dir / f"olmo_{model_name.lower()}_training.yaml"
-        
+
         print(f"Creating {training_file}")
-        with open(training_file, 'w') as f:
+        with open(training_file, "w") as f:
             yaml.dump(training_config, f, default_flow_style=False, sort_keys=False)
-    
+
     # Update the Python configuration dictionary
     print("\nUpdating olmo/models/configuration_olmo.py...")
-    
+
     config_py_content = '''# src/models/configuration_olmo.py
 from transformers import PretrainedConfig
 from typing import Optional
@@ -333,34 +327,35 @@ class OLMoConfig(PretrainedConfig):
 # Predefined configurations for each model size (matching OLMo paper exactly)
 OLMO_CONFIGS = {
 '''
-    
+
     # Add each configuration
     for model_name, params in OLMO_CONFIGS.items():
         intermediate = int(params["hidden_size"] * 4)
-        config_py_content += f'''    "{model_name}": OLMoConfig(
+        config_py_content += f"""    "{model_name}": OLMoConfig(
         hidden_size={params["hidden_size"]},
         num_hidden_layers={params["num_layers"]},
         num_attention_heads={params["num_heads"]},
         intermediate_size={intermediate},
     ),
-'''
-    
+"""
+
     config_py_content += "}\n"
-    
+
     # Write the updated configuration
     config_py_path = Path("../olmo/models/configuration_olmo.py")
-    with open(config_py_path, 'w') as f:
+    with open(config_py_path, "w") as f:
         f.write(config_py_content)
-    
+
     print(f"\nUpdated {config_py_path}")
-    
-    print("\n" + "="*70)
+
+    print("\n" + "=" * 70)
     print("Configuration update complete!")
     print("\nKey changes:")
     print("- All model sizes now match paper exactly")
     print("- Learning rates follow the paper's schedule")
     print("- Batch sizes and training steps are correct")
     print("- Intermediate sizes use 4x expansion for SwiGLU")
+
 
 if __name__ == "__main__":
     main()

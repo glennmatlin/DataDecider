@@ -1,10 +1,12 @@
 """OLMo model evaluator for benchmarking."""
 
-import torch
 from typing import Dict
+
+import numpy as np
+import torch
 from datasets import load_dataset
 from tqdm import tqdm
-import numpy as np
+
 from ..utils import get_logger
 
 logger = get_logger(__name__)
@@ -95,9 +97,7 @@ class OLMoEvaluator:
 
     def _get_sequence_likelihood(self, text: str) -> float:
         """Calculate likelihood of a sequence."""
-        inputs = self.tokenizer(
-            text, return_tensors="pt", truncation=True, max_length=512
-        )
+        inputs = self.tokenizer(text, return_tensors="pt", truncation=True, max_length=512)
         inputs = {k: v.to(self.device) for k, v in inputs.items()}
 
         with torch.no_grad():
@@ -109,9 +109,7 @@ class OLMoEvaluator:
         shift_labels = inputs["input_ids"][..., 1:].contiguous()
 
         loss_fct = torch.nn.CrossEntropyLoss(reduction="none")
-        loss = loss_fct(
-            shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
-        )
+        loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
         return -loss.mean().item()
 

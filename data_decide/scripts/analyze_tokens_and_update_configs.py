@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Analyze token requirements and update configurations based on OLMo paper."""
 
-import os
-import sys
 import gzip
 import json
-import yaml
+import os
 from pathlib import Path
-from transformers import AutoTokenizer
+
 import numpy as np
-from tqdm import tqdm
+import yaml
+from transformers import AutoTokenizer
 
 # OLMo hyperparameters from the paper
 OLMO_HYPERPARAMS = {
@@ -155,87 +154,90 @@ OLMO_HYPERPARAMS = {
     },
 }
 
+
 def count_tokens_sample(file_path: str, tokenizer, sample_size: int = 1000):
     """Sample documents to estimate total tokens."""
-    
+
     token_counts = []
-    
-    with gzip.open(file_path, 'rt') as f:
+
+    with gzip.open(file_path, "rt") as f:
         for i, line in enumerate(f):
             if i >= sample_size:
                 break
             doc = json.loads(line)
-            tokens = tokenizer.encode(doc['text'], truncation=False)
+            tokens = tokenizer.encode(doc["text"], truncation=False)
             token_counts.append(len(tokens))
-    
+
     return np.array(token_counts)
+
 
 def analyze_token_requirements(arxiv_file: str, sequence_length: int = 2048):
     """Analyze token requirements for all models."""
-    
+
     # Load tokenizer - GPT-NeoX-20B as used in OLMo
     print("Loading GPT-NeoX-20B tokenizer...")
     tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neox-20b")
-    
+
     # Sample to estimate tokens
     print(f"\nSampling documents from {arxiv_file}...")
     token_counts = count_tokens_sample(arxiv_file, tokenizer, sample_size=1000)
     avg_tokens_per_doc = np.mean(token_counts)
-    
+
     # Total documents from previous count
     total_docs = 12966
     estimated_total_tokens = int(avg_tokens_per_doc * total_docs)
-    
-    print(f"\nToken Analysis:")
+
+    print("\nToken Analysis:")
     print(f"Average tokens per document: {avg_tokens_per_doc:.1f}")
     print(f"Total documents: {total_docs:,}")
     print(f"Estimated total tokens available: {estimated_total_tokens:,}")
-    
-    print("\n" + "="*80)
+
+    print("\n" + "=" * 80)
     print("Model Requirements vs Available Data")
-    print("="*80)
-    
+    print("=" * 80)
+
     for model_name, params in OLMO_HYPERPARAMS.items():
-        tokens_required = int(params['tokens_trained'])
-        batch_size = params['batch_size']
-        training_steps = params['training_steps']
-        
+        tokens_required = int(params["tokens_trained"])
+        batch_size = params["batch_size"]
+        training_steps = params["training_steps"]
+
         # Calculate tokens per step
         tokens_per_step = batch_size * sequence_length
-        
+
         # Verify the calculation
         calculated_tokens = tokens_per_step * training_steps
-        
+
         print(f"\n{model_name} Model ({params['actual_size']} params):")
         print(f"  Required tokens: {tokens_required:,}")
         print(f"  Training steps: {training_steps:,}")
         print(f"  Batch size: {batch_size}")
         print(f"  Tokens per step: {tokens_per_step:,} (batch_size × seq_length)")
         print(f"  Calculated total: {calculated_tokens:,}")
-        
+
         if model_name == "4M":
             if estimated_total_tokens >= tokens_required:
                 print(f"  Data status: ✅ SUFFICIENT ({estimated_total_tokens / tokens_required:.2f}x required)")
             else:
                 epochs_needed = tokens_required / estimated_total_tokens
-                print(f"  Data status: ❌ INSUFFICIENT")
+                print("  Data status: ❌ INSUFFICIENT")
                 print(f"  Need to repeat data {epochs_needed:.1f} times")
-                
+
             # Calculate actual training parameters
-            print(f"\n  Training Configuration:")
+            print("\n  Training Configuration:")
             print(f"    Learning rate: {params['learning_rate']}")
             print(f"    Hidden dimension: {params['hidden_dim']}")
             print(f"    Number of heads: {params['num_heads']}")
             print(f"    Number of layers: {params['num_layers']}")
             print(f"    Intermediate size: {params['hidden_dim'] * 4}")  # Standard 4x expansion
-    
+
     return estimated_total_tokens
+
 
 def generate_updated_configs():
     """Generate configuration files for all models based on paper."""
-    
+
     configs_dir = Path("../configs")
-    
+
     # Create model configs
     for model_name, params in OLMO_HYPERPARAMS.items():
         model_config = {
@@ -263,13 +265,13 @@ def generate_updated_configs():
                 "training_steps": params["training_steps"],
                 "tokens_trained": params["tokens_trained"] / 1e9,  # In billions
                 "actual_model_size": params["actual_size"],
-            }
+            },
         }
-        
+
         config_path = configs_dir / "model_configs" / f"olmo_{model_name.lower()}.yaml"
         print(f"\nWould create: {config_path}")
         print(yaml.dump(model_config, default_flow_style=False)[:200] + "...")
-        
+
     # Create training configs
     for model_name, params in OLMO_HYPERPARAMS.items():
         if model_name == "4M":  # Detailed config for 4M
@@ -302,10 +304,11 @@ def generate_updated_configs():
                     "seed": 42,
                 }
             }
-            
+
             config_path = configs_dir / "training_configs" / f"olmo_{model_name.lower()}_training.yaml"
             print(f"\nWould create: {config_path}")
             print(yaml.dump(training_config, default_flow_style=False))
+
 
 def main():
     # Find arxiv data
@@ -314,24 +317,24 @@ def main():
         if os.path.exists(path):
             arxiv_file = path
             break
-    
+
     if not arxiv_file:
         print("Error: Could not find arxiv-0098.json.gz")
         return
-    
+
     # Analyze token requirements
     total_tokens = analyze_token_requirements(arxiv_file)
-    
+
     # Show config generation
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("Configuration Updates Needed")
-    print("="*80)
+    print("=" * 80)
     generate_updated_configs()
-    
+
     # Recommendations
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("RECOMMENDATIONS")
-    print("="*80)
+    print("=" * 80)
     print("\nFor 4M model training:")
     print("1. We need 400M tokens total")
     print("2. With 32 batch size and 2048 sequence length = 65,536 tokens per step")
@@ -341,6 +344,7 @@ def main():
     print("- Count exact tokens in arxiv-0098.json.gz")
     print("- Update all configuration files with correct hyperparameters")
     print("- Implement data repetition if needed")
+
 
 if __name__ == "__main__":
     main()

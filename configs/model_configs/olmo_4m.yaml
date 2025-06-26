@@ -1,7 +1,7 @@
 # configs/model_configs/olmo_4m.yaml
 model:
   name: "olmo-4m"
-  vocab_size: 50254  # GPT-NeoX-20B tokenizer exact size
+  vocab_size: 50277  # GPT-NeoX-20B tokenizer exact size
   hidden_size: 64
   num_hidden_layers: 8
   num_attention_heads: 8

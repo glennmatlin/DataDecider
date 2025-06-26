@@ -1,8 +1,9 @@
 # src/data/preprocessing.py
-import torch
 from typing import Dict, List
-from transformers import PreTrainedTokenizer
+
+import torch
 from datasets import Dataset
+from transformers import PreTrainedTokenizer
 
 
 class OLMoDataPreprocessor:
@@ -71,14 +72,10 @@ class OLMoDataPreprocessor:
             "labels": concatenated_ids.copy(),  # For causal LM
         }
 
-    def create_training_dataset(
-        self, raw_dataset: Dataset, num_proc: int = 4, batch_size: int = 1000
-    ) -> Dataset:
+    def create_training_dataset(self, raw_dataset: Dataset, num_proc: int = 4, batch_size: int = 1000) -> Dataset:
         """Create training dataset with preprocessing."""
         # Remove unnecessary columns
-        columns_to_remove = [
-            col for col in raw_dataset.column_names if col not in ["text"]
-        ]
+        columns_to_remove = [col for col in raw_dataset.column_names if col not in ["text"]]
 
         # Apply preprocessing
         processed_dataset = raw_dataset.map(
@@ -90,8 +87,6 @@ class OLMoDataPreprocessor:
         )
 
         # Set format for PyTorch
-        processed_dataset.set_format(
-            type="torch", columns=["input_ids", "attention_mask", "labels"]
-        )
+        processed_dataset.set_format(type="torch", columns=["input_ids", "attention_mask", "labels"])
 
         return processed_dataset

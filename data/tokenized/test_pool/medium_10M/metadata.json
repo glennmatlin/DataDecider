@@ -1,0 +1,43 @@
+{
+  "tokenization_config": {
+    "input_path": "data/raw/arxiv_sample.json.gz",
+    "output_path": "data/tokenized/test_pool/medium_10M",
+    "tokenizer_name": "EleutherAI/gpt-neox-20b",
+    "max_seq_length": 2048,
+    "batch_size": 1000,
+    "validation_split": 0.1,
+    "max_tokens": 10000000,
+    "append_eos": true,
+    "save_format": "arrow",
+    "num_proc": 4,
+    "resume": true
+  },
+  "tokenizer_info": {
+    "name": "EleutherAI/gpt-neox-20b",
+    "vocab_size": 50254,
+    "eos_token": "<|endoftext|>",
+    "eos_token_id": 0,
+    "pad_token": "<|endoftext|>"
+  },
+  "statistics": {
+    "total_documents": 100,
+    "total_tokens": 1943217,
+    "total_sequences": 948,
+    "avg_doc_length": 19432.17,
+    "max_doc_length": 74639,
+    "min_doc_length": 211
+  },
+  "dataset_info": {
+    "train_samples": 853,
+    "validation_samples": 95,
+    "sequence_length": 2048
+  },
+  "created_at": "2025-06-25T17:40:43.891796",
+  "datadecider_version": "0.1.0",
+  "checksums": {
+    "train/data-00000-of-00001.arrow": "201e206bdbc995872d52f6f530817bd11d6b483addc5830fbf6c07b0a5911693",
+    "validation/data-00000-of-00001.arrow": "ac9522baa1c8a577689a7597119719a3437b82032372f0fe6b740cb2892fa565"
+  },
+  "description": "Medium dataset for integration tests",
+  "pool_type": "test"
+}

@@ -1,0 +1,11 @@
+append_eos: true
+batch_size: 1000
+input_path: data/raw/synthetic_50M.jsonl
+max_seq_length: 2048
+max_tokens: null
+num_proc: 4
+output_path: data/tokenized/synthetic_demo
+resume: true
+save_format: arrow
+tokenizer_name: EleutherAI/gpt-neox-20b
+validation_split: 0.1

@@ -1,0 +1,14 @@
+{
+  "model_size": "4M",
+  "parameters": 6835456,
+  "training_steps": 100,
+  "final_train_loss": 9.54697880744934,
+  "perplexity": {
+    "train": 6760.450408048997,
+    "eval": 8882.153826035863,
+    "test": 9281.251942176516,
+    "benchmark": 14179.424967319357
+  },
+  "device": "cuda",
+  "fp16": true
+}

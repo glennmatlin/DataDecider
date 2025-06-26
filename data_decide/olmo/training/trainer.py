@@ -1,22 +1,23 @@
 # src/training/trainer.py
-import os
-import torch
-from torch.utils.data import DataLoader, DistributedSampler
-from transformers import (
-    get_linear_schedule_with_warmup,
-    get_cosine_schedule_with_warmup,
-    AutoTokenizer,
-)
-from accelerate import Accelerator
-import wandb
-from tqdm import tqdm
 import json
-from typing import Dict, Optional, Any
+import os
+from typing import Any, Dict, Optional
 
-from ..models.olmo_model import OLMoForCausalLM
+import torch
+import wandb
+from accelerate import Accelerator
+from torch.utils.data import DataLoader, DistributedSampler
+from tqdm import tqdm
+from transformers import (
+    AutoTokenizer,
+    get_cosine_schedule_with_warmup,
+    get_linear_schedule_with_warmup,
+)
+
 from ..models.configuration_olmo import OLMO_CONFIGS
-from ..utils.logging_utils import get_logger
+from ..models.olmo_model import OLMoForCausalLM
 from ..utils.checkpoint_utils import save_checkpoint
+from ..utils.logging_utils import get_logger
 
 logger = get_logger(__name__)
 
@@ -38,9 +39,7 @@ class OLMoTrainer:
         # Initialize accelerator
         self.accelerator = Accelerator(
             mixed_precision="fp16" if self.training_config["fp16"] else "no",
-            gradient_accumulation_steps=self.training_config[
-                "gradient_accumulation_steps"
-            ],
+            gradient_accumulation_steps=self.training_config["gradient_accumulation_steps"],
             log_with=self.training_config["report_to"],
         )
 
@@ -100,21 +99,15 @@ class OLMoTrainer:
         self.optimizer = self._create_optimizer()
 
         # Learning rate scheduler
-        num_training_steps = (
-            len(self.train_dataloader) * self.training_config["num_train_epochs"]
-        )
+        num_training_steps = len(self.train_dataloader) * self.training_config["num_train_epochs"]
         if self.training_config["max_steps"] > 0:
-            num_training_steps = min(
-                num_training_steps, self.training_config["max_steps"]
-            )
+            num_training_steps = min(num_training_steps, self.training_config["max_steps"])
 
         self.lr_scheduler = self._create_scheduler(num_training_steps)
 
         # Prepare with accelerator
-        self.model, self.optimizer, self.train_dataloader, self.lr_scheduler = (
-            self.accelerator.prepare(
-                self.model, self.optimizer, self.train_dataloader, self.lr_scheduler
-            )
+        self.model, self.optimizer, self.train_dataloader, self.lr_scheduler = self.accelerator.prepare(
+            self.model, self.optimizer, self.train_dataloader, self.lr_scheduler
         )
 
         if self.eval_dataset:
@@ -140,19 +133,11 @@ class OLMoTrainer:
         ]
         optimizer_grouped_parameters = [
             {
-                "params": [
-                    p
-                    for n, p in self.model.named_parameters()
-                    if not any(nd in n for nd in no_decay)
-                ],
+                "params": [p for n, p in self.model.named_parameters() if not any(nd in n for nd in no_decay)],
                 "weight_decay": self.training_config["weight_decay"],
             },
             {
-                "params": [
-                    p
-                    for n, p in self.model.named_parameters()
-                    if any(nd in n for nd in no_decay)
-                ],
+                "params": [p for n, p in self.model.named_parameters() if any(nd in n for nd in no_decay)],
                 "weight_decay": 0.0,
             },
         ]
@@ -186,9 +171,7 @@ class OLMoTrainer:
                 num_training_steps=num_training_steps,
             )
         else:
-            raise ValueError(
-                f"Unknown scheduler: {self.training_config['lr_scheduler_type']}"
-            )
+            raise ValueError(f"Unknown scheduler: {self.training_config['lr_scheduler_type']}")
 
         return scheduler
 
@@ -240,9 +223,7 @@ class OLMoTrainer:
                 self.accelerator.backward(loss)
 
                 # Gradient accumulation
-                if (step + 1) % self.training_config[
-                    "gradient_accumulation_steps"
-                ] == 0:
+                if (step + 1) % self.training_config["gradient_accumulation_steps"] == 0:
                     # Gradient clipping
                     if self.training_config["max_grad_norm"] > 0:
                         self.accelerator.clip_grad_norm_(
@@ -264,9 +245,7 @@ class OLMoTrainer:
                         self._log_metrics(
                             {
                                 "train/loss": avg_loss,
-                                "train/learning_rate": self.lr_scheduler.get_last_lr()[
-                                    0
-                                ],
+                                "train/learning_rate": self.lr_scheduler.get_last_lr()[0],
                                 "train/epoch": epoch,
                                 "train/global_step": self.global_step,
                             }
@@ -274,14 +253,9 @@ class OLMoTrainer:
                         total_loss = 0
 
                     # Evaluation
-                    if (
-                        self.global_step % self.training_config["eval_steps"] == 0
-                        and self.eval_dataset is not None
-                    ):
+                    if self.global_step % self.training_config["eval_steps"] == 0 and self.eval_dataset is not None:
                         eval_metrics = self.evaluate()
-                        self._log_metrics(
-                            {f"eval/{k}": v for k, v in eval_metrics.items()}
-                        )
+                        self._log_metrics({f"eval/{k}": v for k, v in eval_metrics.items()})
 
                         # Save best model
                         if eval_metrics["loss"] < self.best_eval_loss:

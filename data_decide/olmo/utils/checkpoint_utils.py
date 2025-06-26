@@ -1,11 +1,12 @@
 """Checkpoint utilities for OLMo training."""
 
-import os
-import torch
 import json
-from pathlib import Path
-from typing import Dict, Any, Optional
+import os
 from datetime import datetime
+from pathlib import Path
+from typing import Any, Dict, Optional
+
+import torch
 
 
 def save_checkpoint(

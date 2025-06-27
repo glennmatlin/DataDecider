@@ -174,9 +174,9 @@ cython_debug/
 .abstra/
 
 # Visual Studio Code
-#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore 
+#  Visual Studio Code specific template is maintained in a separate VisualStudioCode.gitignore
 #  that can be found at https://github.com/github/gitignore/blob/main/Global/VisualStudioCode.gitignore
-#  and can be added to the global gitignore or merged into this file. However, if you prefer, 
+#  and can be added to the global gitignore or merged into this file. However, if you prefer,
 #  you could uncomment the following to ignore the enitre vscode folder
 # .vscode/
 
@@ -201,9 +201,24 @@ data/processed/
 
 # Training artifacts
 checkpoints/
+checkpoint-*/
 logs/
 wandb/
 outputs/
+**/checkpoint-*/
+**/final_model/
+archived_checkpoints/
+
+# Dataset artifacts
+*.arrow
+*.parquet
+data_pools/
+datasets/
+
+# Temporary files
+*.tmp
+*.temp
+*~
 
 # OS files
 .DS_Store

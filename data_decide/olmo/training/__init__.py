@@ -1,8 +1,8 @@
 """OLMo training module."""
 
-from .trainer import OLMoTrainer
+from .callbacks import CheckpointCallback, LoggingCallback, TrainingCallback
 from .optimization import create_optimizer, create_scheduler
-from .callbacks import TrainingCallback, LoggingCallback, CheckpointCallback
+from .trainer import OLMoTrainer
 
 __all__ = [
     "OLMoTrainer",

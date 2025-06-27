@@ -1,8 +1,9 @@
 # tests/test_data_curation.py
-import unittest
-import tempfile
 import json
 import os
+import tempfile
+import unittest
+
 from olmo.data.data_curation import DataDecideCurator
 
 

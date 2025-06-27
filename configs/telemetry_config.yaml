@@ -1,0 +1,276 @@
+# Telemetry Configuration for DataDecider
+# This file controls monitoring and tracking features during training
+
+# Progress Display Settings
+progress:
+  # Enable/disable CLI progress display
+  enabled: true
+
+  # Quiet mode (minimal output)
+  quiet: false
+
+  # Verbose mode (detailed output)
+  verbose: false
+
+  # Update frequency for progress bars (in steps)
+  update_frequency: 10
+
+  # Show system metrics in progress display
+  show_system_metrics: true
+
+  # Progress bar style
+  style:
+    # Use colors in terminal output
+    use_colors: true
+
+    # Show time estimates
+    show_time_estimates: true
+
+    # Show current metrics in progress bar
+    show_inline_metrics: true
+
+# Weights & Biases (WANDB) Configuration
+wandb:
+  # Enable/disable WANDB tracking
+  enabled: true
+
+  # WANDB mode: online, offline, or disabled
+  mode: "online"
+
+  # Project name (can be overridden by command line)
+  project: "datadecider"
+
+  # Entity (username or team, optional)
+  entity: null
+
+  # Default tags for all runs
+  default_tags:
+    - "olmo"
+    - "4m"
+
+  # Log frequency (in steps)
+  log_frequency: 10
+
+  # What to log
+  logging:
+    # Log training metrics
+    metrics: true
+
+    # Log system metrics (GPU, CPU, memory)
+    system_metrics: true
+
+    # Log model gradients
+    gradients: true
+
+    # Log gradient histograms (more detailed but slower)
+    gradient_histograms: false
+
+    # Log learning rate
+    learning_rate: true
+
+    # Log sample predictions
+    predictions: true
+
+    # Number of predictions to log
+    num_predictions: 10
+
+    # Log model architecture
+    model_architecture: true
+
+    # Log data statistics
+    data_statistics: true
+
+    # Save model checkpoints as artifacts
+    save_checkpoints: true
+
+# Logging Configuration
+logging:
+  # Console logging level: DEBUG, INFO, WARNING, ERROR
+  console_level: "INFO"
+
+  # File logging level
+  file_level: "DEBUG"
+
+  # Log file location (relative to output directory)
+  log_file: "training.log"
+
+  # Maximum log file size before rotation (in MB)
+  max_file_size: 100
+
+  # Number of backup files to keep
+  backup_count: 5
+
+  # Log format
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+
+# Metrics and Monitoring
+monitoring:
+  # Track peak memory usage
+  track_peak_memory: true
+
+  # Log metrics to CSV file
+  save_metrics_csv: true
+
+  # Create plots of training curves
+  create_plots: true
+
+  # Plot update frequency (in steps)
+  plot_frequency: 100
+
+  # Metrics to track
+  tracked_metrics:
+    - "loss"
+    - "perplexity"
+    - "learning_rate"
+    - "gradient_norm"
+    - "throughput"
+
+  # Custom DataDecide metrics
+  datadecide_metrics:
+    # Track proxy dataset performance
+    track_proxy_performance: true
+
+    # Track data efficiency metrics
+    track_data_efficiency: true
+
+    # Track token statistics
+    track_token_stats: true
+
+# Alerts and Notifications
+alerts:
+  # Enable alerts
+  enabled: false
+
+  # Alert conditions
+  conditions:
+    # Alert on high loss
+    high_loss_threshold: 10.0
+
+    # Alert on NaN/Inf values
+    detect_nan_inf: true
+
+    # Alert on low GPU utilization
+    low_gpu_threshold: 50  # percentage
+
+    # Alert on training stall (no improvement)
+    stall_patience: 100  # steps
+
+  # Notification methods
+  notifications:
+    # Console alerts
+    console: true
+
+    # Email alerts (requires configuration)
+    email: false
+
+    # Slack alerts (requires webhook URL)
+    slack: false
+
+# Performance Profiling
+profiling:
+  # Enable PyTorch profiler
+  enabled: false
+
+  # Profiling schedule
+  wait_steps: 10
+  warmup_steps: 10
+  active_steps: 20
+  repeat: 3
+
+  # What to profile
+  profile_memory: true
+  profile_cuda: true
+
+  # Export chrome trace
+  export_chrome_trace: true
+
+# Data Loading Monitoring
+data_monitoring:
+  # Track data loading time
+  track_loading_time: true
+
+  # Log data sample statistics
+  log_sample_stats: true
+
+  # Track cache hit rates
+  track_cache_metrics: true
+
+# Checkpoint and Recovery
+checkpointing:
+  # Auto-save progress for resume
+  auto_save_progress: true
+
+  # Save frequency (in steps)
+  save_frequency: 1000
+
+  # Keep last N checkpoints
+  keep_last_n: 3
+
+  # Save best model separately
+  save_best: true
+
+  # Metric for best model selection
+  best_metric: "eval_loss"
+
+  # Metric mode: min or max
+  best_mode: "min"
+
+# Visualization Settings
+visualization:
+  # Create training dashboard
+  create_dashboard: true
+
+  # Dashboard update frequency (seconds)
+  dashboard_update_freq: 30
+
+  # Include in dashboard
+  dashboard_components:
+    - "loss_curve"
+    - "learning_rate_schedule"
+    - "gradient_norms"
+    - "throughput"
+    - "memory_usage"
+    - "perplexity_trend"
+
+# Integration Settings
+integrations:
+  # Use TensorBoard in addition to WANDB
+  tensorboard:
+    enabled: false
+    log_dir: "./tensorboard_logs"
+
+  # MLflow integration
+  mlflow:
+    enabled: false
+    tracking_uri: null
+
+  # Custom callbacks
+  custom_callbacks: []
+
+# Default overrides for specific model sizes
+model_specific:
+  "4m":
+    wandb:
+      default_tags:
+        - "olmo-4m"
+        - "small-model"
+    monitoring:
+      plot_frequency: 50
+
+  "70m":
+    wandb:
+      default_tags:
+        - "olmo-70m"
+        - "medium-model"
+    monitoring:
+      plot_frequency: 100
+
+  "300m":
+    wandb:
+      default_tags:
+        - "olmo-300m"
+        - "large-model"
+    monitoring:
+      plot_frequency: 200
+    profiling:
+      enabled: true

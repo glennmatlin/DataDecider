@@ -1,14 +1,15 @@
 """Optimization utilities for OLMo training."""
 
+from typing import Any, Dict, List, Optional
+
 import torch
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import LambdaLR
 from transformers import (
-    get_linear_schedule_with_warmup,
-    get_cosine_schedule_with_warmup,
     get_constant_schedule_with_warmup,
+    get_cosine_schedule_with_warmup,
+    get_linear_schedule_with_warmup,
 )
-from typing import List, Dict, Any, Optional
 
 
 def create_optimizer(
@@ -56,18 +57,14 @@ def create_optimizer(
         },
         {
             "params": [
-                p
-                for n, p in model.named_parameters()
-                if any(nd in n for nd in no_decay_keywords) and p.requires_grad
+                p for n, p in model.named_parameters() if any(nd in n for nd in no_decay_keywords) and p.requires_grad
             ],
             "weight_decay": 0.0,
         },
     ]
 
     # Filter out empty parameter groups
-    optimizer_grouped_parameters = [
-        group for group in optimizer_grouped_parameters if len(group["params"]) > 0
-    ]
+    optimizer_grouped_parameters = [group for group in optimizer_grouped_parameters if len(group["params"]) > 0]
 
     optimizer = AdamW(
         optimizer_grouped_parameters,
@@ -115,9 +112,7 @@ def create_scheduler(
             num_cycles=num_cycles,
         )
     elif scheduler_type == "constant":
-        scheduler = get_constant_schedule_with_warmup(
-            optimizer, num_warmup_steps=num_warmup_steps
-        )
+        scheduler = get_constant_schedule_with_warmup(optimizer, num_warmup_steps=num_warmup_steps)
     elif scheduler_type == "polynomial":
         scheduler = get_polynomial_decay_schedule_with_warmup(
             optimizer,
@@ -204,9 +199,7 @@ def get_parameter_groups(
     ]
 
 
-def calculate_gradient_norm(
-    parameters: List[torch.nn.Parameter], norm_type: float = 2.0
-) -> float:
+def calculate_gradient_norm(parameters: List[torch.nn.Parameter], norm_type: float = 2.0) -> float:
     """
     Calculate gradient norm for monitoring.
 
@@ -227,9 +220,7 @@ def calculate_gradient_norm(
 
     device = parameters[0].grad.device
     total_norm = torch.norm(
-        torch.stack(
-            [torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]
-        ),
+        torch.stack([torch.norm(p.grad.detach(), norm_type).to(device) for p in parameters]),
         norm_type,
     )
 

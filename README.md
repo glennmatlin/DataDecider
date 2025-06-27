@@ -123,8 +123,38 @@ Supported OLMo configurations:
 - **Mixed Precision**: FP16/BF16 training for efficiency
 - **Gradient Checkpointing**: Memory-efficient training for larger models
 - **Learning Rate Scheduling**: Cosine decay with warmup
-- **Weights & Biases Integration**: Automatic metric logging and visualization
-- **Rich Progress Bars**: Beautiful terminal UI for training progress
+- **Comprehensive Monitoring**: WANDB integration with system metrics and rich terminal UI
+- **Pre-tokenized Data Pipeline**: Efficient training with separated tokenization
+
+## Monitoring & Visualization
+
+DataDecider includes a comprehensive monitoring system that provides both local and cloud-based tracking:
+
+### Rich Terminal UI
+- Real-time progress bars for epochs, steps, and evaluation
+- Live metrics display (loss, learning rate, GPU usage)
+- Beautiful colored output with system information
+- Time estimates and performance metrics
+
+### WANDB Integration
+- Automatic experiment tracking to Weights & Biases
+- System monitoring (GPU utilization, memory, temperature)
+- Model metrics (gradients, learning rates, predictions)
+- Checkpoint artifact management
+- Hyperparameter tracking and visualization
+
+### Quick Setup
+```bash
+# 1. Add to .env file
+WANDB_API_KEY=your_api_key
+WANDB_PROJECT=finpile_datadecide
+WANDB_ENTITY=your_username
+
+# 2. Run training (monitoring enabled by default)
+uv run python examples/train_olmo_pretokenized.py --dataset tiny_100k
+```
+
+See [`docs/monitoring.md`](docs/monitoring.md) for complete documentation and [`docs/wandb-quickstart.md`](docs/wandb-quickstart.md) for a quick start guide.
 
 ## Project Structure
 

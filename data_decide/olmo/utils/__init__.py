@@ -1,8 +1,8 @@
 """Utility modules for OLMo training pipeline."""
 
-from .logging_utils import setup_logging, get_logger
-from .checkpoint_utils import save_checkpoint, load_checkpoint
+from .checkpoint_utils import load_checkpoint, save_checkpoint
 from .config_utils import load_config, merge_configs
+from .logging_utils import get_logger, setup_logging
 
 __all__ = [
     "setup_logging",

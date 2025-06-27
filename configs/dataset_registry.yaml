@@ -1,0 +1,67 @@
+# Dataset Registry for DataDecider
+# This file defines available pre-tokenized datasets
+
+datasets:
+  # Test datasets for quick experiments
+  test_tiny:
+    path: "data/tokenized/test_pool/tiny_100k"
+    tokens: 100000
+    purpose: "unit tests and debugging"
+    description: "Tiny dataset (100K tokens) for unit tests and quick debugging"
+
+  test_small:
+    path: "data/tokenized/test_pool/small_1M"
+    tokens: 1000000
+    purpose: "quick experiments"
+    description: "Small dataset (1M tokens) for rapid experimentation"
+
+  test_medium:
+    path: "data/tokenized/test_pool/medium_10M"
+    tokens: 10000000
+    purpose: "integration tests"
+    description: "Medium dataset (10M tokens) for integration testing and development"
+
+  # TODO: safely remove demo datasets from registry
+  # Demo datasets
+  arxiv_demo:
+    path: "data/tokenized/arxiv_demo"
+    tokens: 1943217
+    purpose: "small demos"
+    description: "Small arXiv dataset (1.9M tokens) for quick demos"
+
+  # TODO: safely remove production datasets from registry aside from one example / placeholder
+  # Production datasets
+  arxiv_4m_full:
+    path: "data/tokenized/arxiv_4m"
+    tokens: 400000000
+    purpose: "full model training"
+    description: "Full arXiv dataset (400M tokens) for OLMo 4M model training"
+
+  # Placeholder for additional datasets
+  arxiv_70m_full:
+    path: "data/tokenized/arxiv_70m"
+    tokens: 7000000000
+    purpose: "70M model training"
+    description: "Full arXiv dataset (7B tokens) for OLMo 70M model training"
+    available: false  # Not yet created
+
+  arxiv_300m_full:
+    path: "data/tokenized/arxiv_300m"
+    tokens: 30000000000
+    purpose: "300M model training"
+    description: "Full arXiv dataset (30B tokens) for OLMo 300M model training"
+    available: false  # Not yet created
+
+# TODO: Cleanup the name/task maps
+# Dataset selection shortcuts
+shortcuts:
+  test: "test_small"
+  dev: "test_medium"
+  prod: "arxiv_4m_full"
+
+# Default dataset for different scenarios
+defaults:
+  unit_test: "test_tiny"
+  integration_test: "test_medium"
+  experiment: "test_small"
+  training: "arxiv_4m_full"

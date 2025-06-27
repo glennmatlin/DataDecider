@@ -21,4 +21,4 @@ training_params:
   batch_size: 192
   learning_rate: 4.2e-03
   training_steps: 38157
-  tokens_trained: 15.0  # Billion
+  tokens_trained: "15B"

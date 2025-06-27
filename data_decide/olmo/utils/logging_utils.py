@@ -7,9 +7,7 @@ from pathlib import Path
 from typing import Optional
 
 
-def setup_logging(
-    output_dir: str, log_level: str = "INFO", log_file: str = "training.log"
-) -> None:
+def setup_logging(output_dir: str, log_level: str = "INFO", log_file: str = "training.log") -> None:
     """
     Setup logging configuration for training.
 

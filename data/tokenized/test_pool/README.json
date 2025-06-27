@@ -1,0 +1,19 @@
+{
+  "test_pools": {
+    "tiny_100k": {
+      "path": "data/tokenized/test_pool/tiny_100k",
+      "max_tokens": 100000,
+      "description": "Tiny dataset for unit tests and debugging"
+    },
+    "small_1M": {
+      "path": "data/tokenized/test_pool/small_1M",
+      "max_tokens": 1000000,
+      "description": "Small dataset for quick experiments"
+    },
+    "medium_10M": {
+      "path": "data/tokenized/test_pool/medium_10M",
+      "max_tokens": 10000000,
+      "description": "Medium dataset for integration tests"
+    }
+  }
+}

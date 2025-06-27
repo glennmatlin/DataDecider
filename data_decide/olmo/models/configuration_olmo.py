@@ -1,6 +1,7 @@
 # src/models/configuration_olmo.py
-from transformers import PretrainedConfig
 from typing import Optional
+
+from transformers import PretrainedConfig
 
 
 class OLMoConfig(PretrainedConfig):
@@ -10,7 +11,7 @@ class OLMoConfig(PretrainedConfig):
 
     def __init__(
         self,
-        vocab_size: int = 50257,
+        vocab_size: int = 50277,
         hidden_size: int = 768,
         num_hidden_layers: int = 12,
         num_attention_heads: int = 12,
@@ -53,7 +54,7 @@ class OLMoConfig(PretrainedConfig):
 # Predefined configurations for each model size
 OLMO_CONFIGS = {
     "4M": OLMoConfig(
-        vocab_size=50254,  # GPT-NeoX-20B tokenizer
+        vocab_size=50277,  # GPT-NeoX-20B tokenizer actual size
         hidden_size=64,
         num_hidden_layers=8,
         num_attention_heads=8,

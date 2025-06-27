@@ -4,6 +4,7 @@ import os
 import time
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
+
 import wandb
 
 from ..utils.logging_utils import get_logger
@@ -86,9 +87,7 @@ class LoggingCallback(TrainingCallback):
 
                 self.tb_writer = SummaryWriter(self.log_dir)
             except ImportError:
-                logger.warning(
-                    "TensorBoard not available. Install with: pip install tensorboard"
-                )
+                logger.warning("TensorBoard not available. Install with: pip install tensorboard")
                 self.log_to_tensorboard = False
 
         logger.info(f"Training started. Logging to {self.log_dir}")
@@ -134,10 +133,7 @@ class LoggingCallback(TrainingCallback):
         # Log at specified intervals
         if step % self.log_interval == 0:
             # Calculate averages
-            avg_metrics = {
-                key: sum(values) / len(values)
-                for key, values in self.accumulated_metrics.items()
-            }
+            avg_metrics = {key: sum(values) / len(values) for key, values in self.accumulated_metrics.items()}
 
             # Add step number
             avg_metrics["step"] = step
@@ -239,9 +235,7 @@ class CheckpointCallback(TrainingCallback):
             if is_best:
                 self.best_metric = current_metric
                 self._save_checkpoint(trainer, "best")
-                logger.info(
-                    f"New best model saved with {self.metric_for_best}: {current_metric:.4f}"
-                )
+                logger.info(f"New best model saved with {self.metric_for_best}: {current_metric:.4f}")
 
     def _save_checkpoint(self, trainer, checkpoint_name: str):
         """Save a checkpoint."""
@@ -255,10 +249,7 @@ class CheckpointCallback(TrainingCallback):
             self.saved_checkpoints.append(checkpoint_path)
 
         # Remove old checkpoints if limit is set
-        if (
-            self.save_total_limit
-            and len(self.saved_checkpoints) > self.save_total_limit
-        ):
+        if self.save_total_limit and len(self.saved_checkpoints) > self.save_total_limit:
             old_checkpoint = self.saved_checkpoints.pop(0)
             if os.path.exists(old_checkpoint):
                 import shutil
@@ -334,9 +325,7 @@ class EarlyStoppingCallback(TrainingCallback):
             logger.info(f"Metric improved to {current_metric:.4f}")
         else:
             self.patience_counter += 1
-            logger.info(
-                f"No improvement. Patience: {self.patience_counter}/{self.patience}"
-            )
+            logger.info(f"No improvement. Patience: {self.patience_counter}/{self.patience}")
 
             if self.patience_counter >= self.patience:
                 self.should_stop = True

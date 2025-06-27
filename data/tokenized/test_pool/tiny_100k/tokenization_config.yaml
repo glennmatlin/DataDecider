@@ -1,0 +1,11 @@
+append_eos: true
+batch_size: 1000
+input_path: data/raw/arxiv_sample.json.gz
+max_seq_length: 2048
+max_tokens: 100000
+num_proc: 4
+output_path: data/tokenized/test_pool/tiny_100k
+resume: true
+save_format: arrow
+tokenizer_name: EleutherAI/gpt-neox-20b
+validation_split: 0.1

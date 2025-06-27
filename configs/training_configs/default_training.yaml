@@ -2,7 +2,7 @@
 training:
   # Model selection
   model_size: "150M"  # Options: 4M, 6M, 8M, 10M, 14M, 16M, 20M, 60M, 90M, 150M, 300M, 530M, 750M, 1B
-  
+
   # Training hyperparameters (from table)
   learning_rate: 4.2e-03
   batch_size: 192
@@ -15,38 +15,38 @@ training:
   adam_beta2: 0.95
   adam_epsilon: 1e-8
   max_grad_norm: 1.0
-  
+
   # Optimization
   optimizer: "adamw"
   lr_scheduler_type: "cosine"
-  
+
   # Mixed precision
   fp16: true
   bf16: false  # Use bf16 if available
-  
+
   # Checkpointing
   save_strategy: "steps"
   save_steps: 1000
   save_total_limit: 10
   load_best_model_at_end: false
-  
+
   # Logging
   logging_steps: 10
   logging_first_step: true
   report_to: ["wandb", "tensorboard"]
-  
+
   # Evaluation
   evaluation_strategy: "steps"
   eval_steps: 1000
   per_device_eval_batch_size: 64
-  
+
   # Distributed training
   ddp_find_unused_parameters: false
   gradient_checkpointing: true
-  
+
   # Data
   max_length: 2048
   num_workers: 4
-  
+
   # Random seed
   seed: 42

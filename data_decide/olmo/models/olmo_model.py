@@ -1,10 +1,11 @@
 # src/models/olmo_model.py
+import math
+from typing import Optional, Tuple
+
 import torch
 import torch.nn as nn
 from transformers import PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast
-from typing import Optional, Tuple
-import math
 
 from .configuration_olmo import OLMoConfig
 
@@ -17,10 +18,8 @@ class RotaryEmbedding(nn.Module):
         self.dim = dim
         self.max_position_embeddings = max_position_embeddings
         self.base = base
-        self.inv_freq = 1.0 / (
-            self.base ** (torch.arange(0, self.dim, 2).float() / self.dim)
-        )
-        self.register_buffer("inv_freq", self.inv_freq)
+        inv_freq = 1.0 / (self.base ** (torch.arange(0, self.dim, 2).float() / self.dim))
+        self.register_buffer("inv_freq", inv_freq)
 
     def forward(self, x, seq_len=None):
         if seq_len is None:
@@ -76,54 +75,45 @@ class OLMoAttention(nn.Module):
         bsz, q_len, _ = hidden_states.size()
 
         # QKV projections
-        query_states = (
-            self.q_proj(hidden_states)
-            .view(bsz, q_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-        )
-        key_states = (
-            self.k_proj(hidden_states)
-            .view(bsz, q_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-        )
-        value_states = (
-            self.v_proj(hidden_states)
-            .view(bsz, q_len, self.num_heads, self.head_dim)
-            .transpose(1, 2)
-        )
+        query_states = self.q_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        key_states = self.k_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
+        value_states = self.v_proj(hidden_states).view(bsz, q_len, self.num_heads, self.head_dim).transpose(1, 2)
 
         # Apply rotary embeddings
         cos, sin = self.rotary_emb(value_states, seq_len=q_len)
-        query_states, key_states = apply_rotary_pos_emb(
-            query_states, key_states, cos, sin, position_ids
-        )
+        query_states, key_states = apply_rotary_pos_emb(query_states, key_states, cos, sin, position_ids)
 
         # Attention
-        attn_weights = torch.matmul(
-            query_states, key_states.transpose(2, 3)
-        ) / math.sqrt(self.head_dim)
+        attn_weights = torch.matmul(query_states, key_states.transpose(2, 3)) / math.sqrt(self.head_dim)
 
         if attention_mask is not None:
+            # Ensure mask is 4D: [batch, num_heads, seq_len, seq_len]
+            if attention_mask.dim() == 2:
+                # From [batch, seq_len] to [batch, 1, 1, seq_len]
+                attention_mask = attention_mask[:, None, None, :]
+            if attention_mask.dim() == 3:
+                # From [batch, 1, seq_len] to [batch, 1, 1, seq_len]
+                attention_mask = attention_mask.unsqueeze(1)
+            # Expand to match attention weights shape
+            attention_mask = attention_mask.expand(bsz, self.num_heads, q_len, -1)
             attn_weights = attn_weights + attention_mask
 
         attn_weights = nn.functional.softmax(attn_weights, dim=-1)
         attn_output = torch.matmul(attn_weights, value_states)
 
         # Reshape and project
-        attn_output = (
-            attn_output.transpose(1, 2).contiguous().view(bsz, q_len, self.hidden_size)
-        )
+        attn_output = attn_output.transpose(1, 2).contiguous().view(bsz, q_len, self.hidden_size)
         attn_output = self.o_proj(attn_output)
 
         return attn_output, None
 
 
-def apply_rotary_pos_emb(q, k, cos, sin, position_ids):
-    """Apply rotary position embeddings to query and key."""
-    cos = cos.squeeze(0)  # [seq_len, dim]
-    sin = sin.squeeze(0)  # [seq_len, dim]
-    q_embed = (q * cos[position_ids]) + (rotate_half(q) * sin[position_ids])
-    k_embed = (k * cos[position_ids]) + (rotate_half(k) * sin[position_ids])
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids=None, unsqueeze_dim=1):
+    """Apply rotary position embeddings using broadcasting."""
+    cos = cos.unsqueeze(unsqueeze_dim)
+    sin = sin.unsqueeze(unsqueeze_dim)
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
     return q_embed, k_embed
 
 
@@ -188,9 +178,7 @@ class OLMoModel(OLMoPreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
         self.embed_tokens = nn.Embedding(config.vocab_size, config.hidden_size)
-        self.layers = nn.ModuleList(
-            [OLMoBlock(config) for _ in range(config.num_hidden_layers)]
-        )
+        self.layers = nn.ModuleList([OLMoBlock(config) for _ in range(config.num_hidden_layers)])
         self.norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
         self.gradient_checkpointing = False
         self.post_init()
@@ -208,15 +196,20 @@ class OLMoModel(OLMoPreTrainedModel):
 
         # Create position ids if not provided
         if position_ids is None:
-            position_ids = torch.arange(
-                input_ids.shape[1], device=input_ids.device
-            ).unsqueeze(0)
+            position_ids = torch.arange(input_ids.shape[1], device=input_ids.device).unsqueeze(0)
 
         # Forward through layers
         for layer in self.layers:
             if self.gradient_checkpointing and self.training:
+
+                def create_custom_forward(module):
+                    def custom_forward(*inputs):
+                        return module(*inputs)[0]  # Return only hidden states
+
+                    return custom_forward
+
                 hidden_states = torch.utils.checkpoint.checkpoint(
-                    layer,
+                    create_custom_forward(layer),
                     hidden_states,
                     attention_mask,
                     position_ids,
@@ -279,9 +272,7 @@ class OLMoForCausalLM(OLMoPreTrainedModel):
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             loss_fct = nn.CrossEntropyLoss()
-            loss = loss_fct(
-                shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1)
-            )
+            loss = loss_fct(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
 
         return CausalLMOutputWithPast(
             loss=loss,

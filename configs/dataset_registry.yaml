@@ -21,6 +21,7 @@ datasets:
     purpose: "integration tests"
     description: "Medium dataset (10M tokens) for integration testing and development"
 
+  # TODO: safely remove demo datasets from registry
   # Demo datasets
   synthetic_demo:
     path: "data/tokenized/synthetic_demo"
@@ -34,6 +35,7 @@ datasets:
     purpose: "small demos"
     description: "Small arXiv dataset (1.9M tokens) for quick demos"
 
+  # TODO: safely remove production datasets from registry aside from one example / placeholder
   # Production datasets
   arxiv_4m_full:
     path: "data/tokenized/arxiv_4m"
@@ -56,6 +58,7 @@ datasets:
     description: "Full arXiv dataset (30B tokens) for OLMo 300M model training"
     available: false  # Not yet created
 
+# TODO: Cleanup the name/task maps
 # Dataset selection shortcuts
 shortcuts:
   test: "test_small"

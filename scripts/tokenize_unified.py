@@ -37,7 +37,6 @@ try:
     from rich.console import Console
     from rich.live import Live
     from rich.panel import Panel
-    from rich.progress import Progress, SpinnerColumn, TimeElapsedColumn
     from rich.table import Table
 
     RICH_AVAILABLE = True
@@ -256,7 +255,16 @@ class UnifiedTokenizer(MonitoringMixin):
     def _init_tokenizer(self):
         """Initialize the tokenizer"""
         logger.info(f"Loading tokenizer: {self.config.tokenizer_name}")
-        tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_name)
+
+        # Some tokenizers like OLMo require trust_remote_code
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_name)
+        except ValueError as e:
+            if "trust_remote_code" in str(e):
+                logger.warning("Tokenizer requires trust_remote_code=True, loading with trust enabled")
+                tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_name, trust_remote_code=True)
+            else:
+                raise
 
         # Ensure we have necessary tokens
         if tokenizer.eos_token is None:
@@ -480,7 +488,13 @@ class UnifiedTokenizer(MonitoringMixin):
     def _process_file_worker(self, file_path: Path) -> Tuple[List[List[int]], Dict]:
         """Worker function for parallel processing"""
         # Re-initialize tokenizer in worker process
-        tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_name)
+        try:
+            tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_name)
+        except ValueError as e:
+            if "trust_remote_code" in str(e):
+                tokenizer = AutoTokenizer.from_pretrained(self.config.tokenizer_name, trust_remote_code=True)
+            else:
+                raise
 
         sequences = []
         stats = {

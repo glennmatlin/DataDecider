@@ -1,4 +1,4 @@
-# CLAUDE.md - AI Agent Guidelines
+# AI Agent Guidelines
 
 This document defines the operational guidelines, tool usage standards, and behavioral rules for AI agents working in shell-based and code development workflows.
 

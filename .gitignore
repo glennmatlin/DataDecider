@@ -207,6 +207,7 @@ wandb/
 outputs/
 **/checkpoint-*/
 **/final_model/
+archived_checkpoints/
 
 # Dataset artifacts
 *.arrow

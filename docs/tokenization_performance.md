@@ -26,7 +26,7 @@ This guide compares different tokenization approaches and provides recommendatio
   - Batch tokenization (100 docs/batch)
   - Fast tokenizers with Rust backend
   - Optimized I/O with larger chunks
-- **Expected Performance**: 
+- **Expected Performance**:
   - ~5,000-10,000 docs/sec
   - ~300,000-500,000 sequences/sec
   - 8-16x speedup over streaming

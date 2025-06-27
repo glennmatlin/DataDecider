@@ -447,3 +447,91 @@ Result: All processes killed by OOM killer despite 62GB available RAM. Permissio
 Learning: The parallel tokenization approach requires too much memory per worker. Each worker loads the full tokenizer model (~2GB) plus processing buffers. 16 workers × 3-4GB = 48-64GB. The streaming approach is more reliable.
 
 TODO: Continue monitoring streaming tokenization (18/200 files complete, ~36 hours total)
+
+[2025-06-26 16:45] Implemented Hybrid Tokenizer with 7.2x Speedup
+
+Context: Community suggested using HuggingFace batch mapping and concatenated tokenization
+
+Action: Investigated and implemented three approaches:
+1. Benchmarked tokenization methods - found batch tokenization 2.8x faster
+2. Created optimized tokenizer using HF datasets - achieved 2,536 docs/sec but high memory
+3. Developed hybrid tokenizer balancing speed and memory - 4,331 docs/sec with 3.1GB RAM
+
+Result: Hybrid tokenizer provides best production solution:
+- 7.2x faster than streaming tokenizer (4,331 vs 600 docs/sec)
+- Stable memory usage (3.1 GB peak)
+- Supports parallel processing when memory allows
+- Uses Parquet format for efficient storage
+- Full dataset tokenization reduced from 36 hours to ~5 hours
+
+Learning: Batch tokenization with HuggingFace fast tokenizers (Rust backend) is key to performance. The "huge token string" approach works but batch processing is more practical. Memory control through chunking and periodic saves enables production reliability.
+
+[2025-06-26 17:00] Organized Tokenization Scripts for Production
+
+Context: Multiple tokenization scripts created during development needed cleanup
+
+Action: Organized scripts into clear structure:
+1. Archived failed scripts (enhanced, extreme, ultra) to archived_tokenizers/failed/
+2. Moved experimental scripts to archived_tokenizers/experimental/
+3. Moved monitoring tools to archived_tokenizers/benchmarks/
+4. Kept only production scripts in main directory
+5. Created README_tokenization.md with usage guide
+
+Result: Clean script organization:
+- Production: tokenize_finpile_hybrid.py (4,300 docs/s), tokenize_finpile_streaming.py (600 docs/s)
+- Utility: tokenize_datasets.py, check_finpile_progress.py
+- All experimental work preserved in organized archive
+- Clear documentation for future use
+
+Learning: Systematic organization during development prevents technical debt. Archive failed experiments for learning while keeping production code clean.
+
+[2025-06-26 17:30] Comprehensive Project Cleanup Completed
+
+Context: Performed full project cleanup to remove artifacts and optimize structure
+
+Action: Executed comprehensive cleanup:
+1. Removed Python cache directories (4 total, ~200KB)
+2. Deleted build artifacts (data_decide.egg-info, 36KB)
+3. Cleaned old WANDB logs (208KB)
+4. Archived old model checkpoints 20-80, kept latest (328MB saved)
+5. Updated .gitignore to include archived_checkpoints/
+6. Reviewed dependencies - kept all after verification of usage
+
+Result:
+- Total space recovered: 328.4MB
+- Project structure optimized
+- All production code intact
+- Created CLEANUP_REPORT.md with detailed summary
+- Dependencies verified (tensorboard used, scipy kept as transitive)
+
+Learning: Regular cleanup prevents accumulation of artifacts. Model checkpoints are the largest space consumers - archiving old ones while keeping latest is optimal balance.
+
+[2025-06-26 17:00] Organized Tokenization Scripts Archive
+
+Context: Multiple tokenization approaches were tested, resulting in many scripts with varying success levels. Need to organize for clarity.
+
+Action: Archived tokenization scripts based on their status:
+1. Failed scripts → archived_tokenizers/failed/
+   - tokenize_finpile_enhanced.py (memory leak issues)
+   - tokenize_finpile_extreme.py (experimental, untested)
+   - tokenize_finpile_ultra.py (OOM killer issues)
+2. Experimental/benchmark scripts → archived_tokenizers/experimental/
+   - tokenize_finpile_optimized.py (experimental HF approach)
+   - benchmark_tokenization.py
+   - benchmark_tokenization_methods.py
+   - test_tokenize_single_file.py
+   - test_ultra_tokenization.py
+3. Monitoring/wrapper scripts → archived_tokenizers/benchmarks/
+   - monitor_finpile_tokenization.py
+   - monitor_streaming.py
+   - run_streaming_tokenization.sh
+   - tokenize_finpile_safe.sh
+
+Result: Clean scripts directory with only production-ready tokenizers:
+- tokenize_datasets.py (general purpose)
+- tokenize_finpile_hybrid.py (production solution - 7.2x speedup)
+- tokenize_finpile_streaming.py (backup/fallback - reliable but slow)
+- check_finpile_progress.py (utility)
+
+Learning: Organizing failed experiments helps track what was tried and why it didn't work. The hybrid approach emerged as the best balance of speed and reliability.
+[2025-06-26 17:49] Comprehensive Cleanup Analysis Complete

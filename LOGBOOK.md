@@ -535,3 +535,96 @@ Result: Clean scripts directory with only production-ready tokenizers:
 
 Learning: Organizing failed experiments helps track what was tried and why it didn't work. The hybrid approach emerged as the best balance of speed and reliability.
 [2025-06-26 17:49] Comprehensive Cleanup Analysis Complete
+
+[2025-06-27] Git Commit and Push - Major Codebase Cleanup
+
+Context: User requested to commit and push all current work to remote repository
+
+Action: Created todo list and executed git workflow:
+1. Checked git status - found all changes already staged
+2. Reviewed commit history to understand repository conventions
+3. Created commit with conventional format following repository style
+4. Pushed to remote repository (origin/init branch)
+
+Result: Successfully committed and pushed changes:
+- Commit: "feat: implement telemetry, tokenization separation, and code quality improvements"
+- Pushed to origin/init branch
+- All cleanup and refactoring changes are now in remote repository
+
+Learning: Repository follows conventional commit format. Main branch work typically done through PRs.
+
+[2025-06-27 12:30] Tokenization Scripts Redundancy Analysis
+
+Context: User requested analysis of all tokenization scripts to identify overlap and redundancy for code consolidation.
+
+Action: Analyzed 6 tokenization-related scripts:
+1. tokenize_finpile_hybrid.py - Production hybrid approach with batch processing
+2. tokenize_finpile_streaming.py - Memory-safe streaming approach
+3. tokenize_datasets.py - General purpose tokenizer for various formats
+4. check_finpile_progress.py - Progress monitoring utility
+5. tokenize_finpile_production.py - NEW production tokenizer with rich monitoring
+6. monitor_tokenization.py - NEW standalone monitoring dashboard
+
+Result: Found significant redundancy between scripts:
+
+**Major Findings:**
+1. tokenize_finpile_production.py is a complete duplicate of hybrid.py with added Rich UI
+2. monitor_tokenization.py duplicates check_finpile_progress.py functionality
+3. ~750 lines of redundant code identified across scripts
+4. Three different checkpoint/progress formats causing incompatibility
+5. Multiple implementations of same monitoring functionality
+
+**Key Overlaps:**
+- Core tokenization: production.py duplicates hybrid.py entirely
+- Checkpointing: 3 different systems (JSON, timestamped files, state files)
+- Monitoring: 4 different implementations (logging, tqdm, rich integrated, rich separate)
+- Metadata: 3 different formats for same data
+
+**Recommendations:**
+1. REMOVE: tokenize_finpile_production.py (duplicate of hybrid)
+2. REMOVE: monitor_tokenization.py (unnecessary with check_progress)
+3. ENHANCE: Add streaming.py's checkpoint to hybrid.py
+4. UPDATE: Make check_finpile_progress.py work with all formats
+5. KEEP: hybrid (primary), streaming (fallback), datasets (general), check_progress (monitor)
+
+Created detailed analysis in docs/tokenization_script_analysis.md
+
+Learning: New scripts were created instead of enhancing existing ones, leading to significant code duplication. Rich UI additions don't justify complete reimplementation. Better to add features to proven scripts.
+- Commit hash: c49cdc8
+- Removed over 1M lines from model checkpoints (>300MB saved)
+- Consolidated tokenization scripts into production-ready versions
+- Added comprehensive documentation and cleanup reports
+- Pre-commit hooks mostly passed (bandit configuration issue)
+- Push completed successfully to https://github.com/glennmatlin/DataDecider
+
+Learning: Repository uses conventional commit format (feat:, refactor:, etc.). Pre-commit hooks enforce code quality with ruff, formatting, and other checks. The bandit security linter has configuration issues that need to be addressed
+
+[2025-06-27 15:00] Code Duplication Analysis and Full Consolidation
+
+Context: User identified significant overlap between tokenization scripts and requested aggressive cleanup
+
+Action: Performed comprehensive analysis:
+1. Analyzed 6 tokenization-related scripts for redundancy
+2. Found ~750 lines of duplicate code across scripts
+3. Created unified tokenization system combining best features
+4. Implemented universal progress monitor for all formats
+5. Archived redundant scripts to archived_scripts/
+
+Result: Complete consolidation achieved:
+- **Created tokenize_unified.py**: Combines all tokenization approaches
+  - Batch mode: 4,300 docs/sec (from hybrid)
+  - Streaming mode: Memory-safe processing (from streaming)
+  - Checkpoint/resume with atomic writes
+  - Parallel processing support
+  - Rich UI monitoring
+  - Multiple format support
+- **Created monitor_progress.py**: Universal progress monitor
+  - Auto-detects tokenization format
+  - Works with all implementations
+  - Real-time resource monitoring
+  - Rich or text UI options
+- **Archived 3 scripts**: tokenize_finpile_hybrid.py, tokenize_finpile_streaming.py, check_finpile_progress.py
+- **Kept tokenize_datasets.py**: Different use case (general purpose)
+- **Created scripts/README.md**: Documents new unified system
+
+Learning: I was creating redundant implementations instead of enhancing existing code. The unified approach eliminates code duplication while preserving all functionality. Always analyze existing code thoroughly before creating new scripts. The consolidation provides better maintainability and consistent behavior across all use cases

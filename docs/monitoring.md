@@ -2,6 +2,40 @@
 
 This guide explains how to use the comprehensive WANDB monitoring system in DataDecider for tracking OLMo model training.
 
+## Quick Start (1 minute setup)
+
+### 1. Get WANDB API Key
+Visit https://wandb.ai/settings to get your API key.
+
+### 2. Create `.env` file
+```bash
+# WANDB Configuration
+WANDB_API_KEY=your_api_key_here
+WANDB_PROJECT=finpile_datadecide
+WANDB_ENTITY=your_username
+WANDB_BASE_URL=https://api.wandb.ai
+```
+
+### 3. Run Training
+```bash
+# Basic usage
+uv run python examples/train_olmo_pretokenized.py --dataset tiny_100k --max-steps 1000
+
+# Custom WANDB settings
+uv run python examples/train_olmo_pretokenized.py \
+    --dataset tiny_100k \
+    --wandb-project my-experiment \
+    --wandb-name my-run-name \
+    --max-steps 1000
+
+# Disable WANDB
+uv run python examples/train_olmo_pretokenized.py --dataset tiny_100k --no-wandb
+```
+
+### 4. View Results
+- **Terminal**: Beautiful progress bars and real-time metrics
+- **WANDB Dashboard**: https://wandb.ai/your-username/finpile_datadecide
+
 ## Overview
 
 DataDecider includes a complete telemetry system that provides:

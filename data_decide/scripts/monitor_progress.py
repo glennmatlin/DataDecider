@@ -352,7 +352,7 @@ class UniversalProgressMonitor:
                 checkpoint_time = datetime.fromisoformat(progress["checkpoint_time"])
                 time_ago = datetime.now() - checkpoint_time
                 time_text = f"Last update: {time_ago.seconds}s ago"
-            except:
+            except Exception:
                 time_text = "Last update: Unknown"
         else:
             time_text = "No checkpoint data"

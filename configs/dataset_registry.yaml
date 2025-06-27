@@ -23,12 +23,6 @@ datasets:
 
   # TODO: safely remove demo datasets from registry
   # Demo datasets
-  synthetic_demo:
-    path: "data/tokenized/synthetic_demo"
-    tokens: 7253100
-    purpose: "demo and testing"
-    description: "Synthetic dataset (7.2M tokens) for demos and WANDB testing"
-
   arxiv_demo:
     path: "data/tokenized/arxiv_demo"
     tokens: 1943217

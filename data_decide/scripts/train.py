@@ -86,7 +86,7 @@ def main():
         )
 
         # Load and analyze data with progress
-        with console.status("[bold green]Loading data...") as status:
+        with console.status("[bold green]Loading data..."):
             raw_data = curator.load_json_data()
             data_stats = curator.compute_data_statistics(raw_data)
 
@@ -195,6 +195,7 @@ def main():
             return
         else:
             # Load raw JSON data
+            from datasets import Dataset
             raw_data = DataDecideCurator(args.data_path).load_json_data()
             train_dataset = Dataset.from_list([{"text": doc["text"]} for doc in raw_data])
 

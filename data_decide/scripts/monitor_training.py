@@ -84,7 +84,6 @@ def get_metrics_table(run_data):
 def get_progress_panel(run_data):
     """Create progress panel."""
     config = run_data.config
-    summary = run_data.summary
 
     # Get current step
     history = run_data.history()
@@ -104,7 +103,7 @@ def get_progress_panel(run_data):
         expand=True,
     )
 
-    task = progress.add_task("", total=total_steps, completed=current_step)
+    progress.add_task("", total=total_steps, completed=current_step)
 
     # Time estimates
     start_time = datetime.fromisoformat(run_data.metadata["startedAt"].replace("Z", "+00:00"))
@@ -158,7 +157,7 @@ def monitor_run(project_name="olmo-4m-datadecide", run_name=None):
 
     layout = create_layout()
 
-    with Live(layout, refresh_per_second=0.5, console=console) as live:
+    with Live(layout, refresh_per_second=0.5, console=console):
         while True:
             try:
                 # Refresh run data

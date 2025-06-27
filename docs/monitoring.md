@@ -33,7 +33,7 @@ DATADECIDER_LOG_LEVEL=INFO
 
 ```bash
 uv run python examples/train_olmo_pretokenized.py \
-    --dataset synthetic_demo \
+    --dataset tiny_100k \
     --max-steps 1000 \
     --eval-steps 100 \
     --batch-size 8 \
@@ -53,7 +53,7 @@ To run without WANDB tracking:
 
 ```bash
 uv run python examples/train_olmo_pretokenized.py \
-    --dataset synthetic_demo \
+    --dataset tiny_100k \
     --no-wandb
 ```
 
@@ -69,7 +69,7 @@ from data_decide.utils.training_monitor import create_training_monitor
 monitor = create_training_monitor(
     config={
         "model_size": "4m",
-        "dataset": "synthetic_demo",
+        "dataset": "tiny_100k",
         "batch_size": 8,
         "learning_rate": 5e-4,
     },
@@ -339,7 +339,7 @@ See complete examples in:
        "model_size": "4m",
        "batch_size": 8,
        "learning_rate": 5e-4,
-       "dataset": "synthetic_demo",
+       "dataset": "tiny_100k",
    }
    ```
 

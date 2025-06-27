@@ -79,7 +79,7 @@ def main():
     # Setup
     output_dir = Path(training_config["output_dir"])
     output_dir.mkdir(parents=True, exist_ok=True)
-    log_file = setup_logging(output_dir)
+    setup_logging(output_dir)
 
     # Initialize accelerator
     accelerator = Accelerator(

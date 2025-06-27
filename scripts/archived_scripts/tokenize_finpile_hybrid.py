@@ -158,9 +158,7 @@ class HybridFinPileTokenizer:
                     memory_gb = psutil.Process().memory_info().rss / 1024**3
                     stats["memory_peak_gb"] = max(stats["memory_peak_gb"], memory_gb)
                     logger.info(
-                        f"Progress: {stats['documents']:,} docs, "
-                        f"{docs_per_sec:.0f} docs/sec, "
-                        f"{memory_gb:.1f} GB memory"
+                        f"Progress: {stats['documents']:,} docs, {docs_per_sec:.0f} docs/sec, {memory_gb:.1f} GB memory"
                     )
 
             # Write remaining sequences
@@ -280,7 +278,7 @@ def main():
     logger.info(f"Sequences: {total_stats['sequences']:,}")
     logger.info(f"Tokens: {total_stats['tokens']:,}")
     logger.info(f"Total time: {total_time:.1f}s")
-    logger.info(f"Average speed: {total_stats['documents']/total_time:.0f} docs/sec")
+    logger.info(f"Average speed: {total_stats['documents'] / total_time:.0f} docs/sec")
 
 
 if __name__ == "__main__":

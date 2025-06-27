@@ -17,7 +17,6 @@ try:
     from rich.layout import Layout
     from rich.live import Live
     from rich.panel import Panel
-    from rich.progress import BarColumn, Progress, TextColumn, TimeRemainingColumn
     from rich.table import Table
 
     RICH_AVAILABLE = True
@@ -108,7 +107,7 @@ class UniversalProgressMonitor:
                 for line in f:
                     if line.startswith("MemTotal:"):
                         return int(line.split()[1]) / 1024 / 1024
-        except:
+        except Exception:
             pass
         return 64.0  # Default assumption
 
@@ -186,7 +185,7 @@ class UniversalProgressMonitor:
                 with pa.memory_map(str(arrow_file)) as source:
                     reader = pa.ipc.open_file(source)
                     total_sequences += reader.num_record_batches
-            except:
+            except Exception:
                 pass
 
         progress["sequences"] = total_sequences
@@ -247,7 +246,7 @@ class UniversalProgressMonitor:
                 stats["total_sequences"] += len(table)
                 if "length" in table.column_names:
                     sequence_lengths.extend(table["length"].to_pylist())
-            except:
+            except Exception:
                 pass
 
         # Count Parquet files
@@ -260,7 +259,7 @@ class UniversalProgressMonitor:
                 stats["total_sequences"] += len(table)
                 if "length" in table.column_names:
                     sequence_lengths.extend(table["length"].to_pylist())
-            except:
+            except Exception:
                 pass
 
         if sequence_lengths:

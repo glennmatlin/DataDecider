@@ -243,3 +243,5 @@ When completing any task:
 - [ ] Git commits contain no AI/name references
 - [ ] Communication is objective and factual
 - [ ] Add your updates to LOGBOOK.md without modifying old entries
+
+@insert /docs/

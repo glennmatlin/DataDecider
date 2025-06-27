@@ -657,3 +657,114 @@ Result: Tokenization is running successfully:
 - Checkpoint system working for resume capability
 
 Learning: Multi-worker processing with transformers tokenizers can have pickling issues. Single-worker batch mode still provides good performance. The unified tokenizer successfully handles production workloads with proper checkpointing and monitoring
+
+---
+
+[2025-01-27 12:45] Comparing tokenize_datasets.py vs tokenize_unified.py
+
+Context: User requested a detailed comparison of two tokenization scripts to identify overlap, unique features, and whether they should be merged.
+
+Action: Read both files and analyzed their functionality, architecture, and use cases.
+
+Result: Successfully analyzed both scripts. Found significant differences in design philosophy and features:
+
+**tokenize_datasets.py**:
+- 357 lines, focused on HuggingFace datasets integration
+- Uses DataDecider's logging framework
+- Creates DatasetDict with train/validation splits
+- Outputs to HuggingFace Arrow/Parquet format
+- Single-threaded processing
+- Basic progress tracking with tqdm
+- Comprehensive metadata with checksums
+
+**tokenize_unified.py**:
+- 795 lines, standalone comprehensive solution
+- Three processing modes: batch, streaming, hybrid
+- Advanced monitoring with optional Rich UI
+- Parallel processing support (ProcessPoolExecutor)
+- Checkpoint/resume capability with atomic writes
+- Memory management with configurable limits
+- Signal handling for graceful shutdown
+- More flexible output options
+
+Learning: The scripts serve different purposes:
+- tokenize_datasets.py is tightly integrated with DataDecider and HuggingFace ecosystem
+- tokenize_unified.py is a production-ready, feature-rich standalone tool
+- They have minimal code overlap despite similar goals
+- Merging would be complex due to different architectures and dependencies
+
+[2025-06-27 16:00] Deep Code Cleanup Analysis of data_decide/scripts/
+
+Context: User requested deep code cleanup analysis to identify dead code, unused imports, and consolidation opportunities
+
+Action: Performed comprehensive analysis of all Python scripts in data_decide/scripts/:
+1. Listed all files and identified 17 Python scripts
+2. Ran ruff check for unused imports/variables - found 7 issues
+3. Searched for TODO/FIXME/debug comments and print statements
+4. Analyzed duplicate functionality between scripts
+5. Read key scripts to understand their purpose and overlap
+
+Result: Major findings:
+
+**Unused Variables (7 issues found by ruff):**
+- analyze_tokens_and_update_configs.py: `total_tokens` assigned but never used
+- monitor_training.py: `summary`, `task`, `live` assigned but never used
+- train.py: `status` assigned but never used  
+- train_enhanced.py: `status` assigned but never used
+- train_standalone.py: `log_file` assigned but never used
+
+**Print Statements:**
+- Extensive use of console.print() in enhanced scripts (Rich UI)
+- Regular print() statements in analyze_tokens_and_update_configs.py (lines 178, 270, 309, etc.)
+- Mix of logging and print statements causing inconsistent output
+
+**Duplicate Functionality:**
+1. **Dataset Building Scripts (major duplication):**
+   - build_4m_dataset.py (216 lines) - Basic tokenization and dataset creation
+   - build_4m_dataset_fast.py (246 lines) - Same functionality with checkpointing
+   - quick_build_dataset.py - Likely similar functionality
+   - ~60-70% code overlap between these scripts
+
+2. **Token Counting Scripts (complete duplication):**
+   - count_tokens.py (139 lines) - Samples documents to estimate tokens
+   - count_exact_tokens.py (135 lines) - Counts all tokens exactly
+   - 90% identical code, only difference is sampling vs full processing
+
+3. **Training Scripts (significant overlap):**
+   - train.py - Uses DataDecide curation
+   - train_standalone.py - Simplified version without curation
+   - train_enhanced.py - Adds telemetry but duplicates core logic
+   - ~50% code duplication in training loops and setup
+
+4. **Configuration Analysis:**
+   - analyze_tokens_and_update_configs.py - Analyzes OLMo hyperparameters
+   - update_all_configs.py - Likely updates configs based on analysis
+   - Potential for consolidation
+
+**Dead Code/Debug:**
+- No explicit TODO/FIXME/DEBUG comments found
+- However, extensive print statements suggest debugging code left in production
+- analyze_tokens_and_update_configs.py generates configs but only prints them (lines 271-310)
+
+**Recommendations for Consolidation:**
+1. **Merge dataset builders** into single script with:
+   - --fast flag for checkpointing
+   - --quick flag for rapid prototyping
+   - Unified interface for all dataset building needs
+
+2. **Merge token counters** into single script with:
+   - --exact flag for full count vs sampling
+   - Shared tokenization logic
+
+3. **Create base training class** and extend for variants:
+   - BaseTrainer with core logic
+   - EnhancedTrainer adds telemetry
+   - StandaloneTrainer for simple use
+
+4. **Remove debug prints** and use proper logging throughout
+
+5. **Fix unused variables** identified by ruff
+
+This cleanup could reduce codebase by ~1,500-2,000 lines while improving maintainability.
+
+Learning: The scripts directory shows signs of rapid prototyping where new scripts were created instead of enhancing existing ones. This led to significant code duplication. A proper refactoring could dramatically simplify the codebase while preserving all functionality.

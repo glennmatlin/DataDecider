@@ -18,14 +18,14 @@
 ### Basic Usage
 ```bash
 uv run python examples/train_olmo_pretokenized.py \
-    --dataset synthetic_demo \
+    --dataset tiny_100k \
     --max-steps 1000
 ```
 
 ### Custom WANDB Settings
 ```bash
 uv run python examples/train_olmo_pretokenized.py \
-    --dataset synthetic_demo \
+    --dataset tiny_100k \
     --wandb-project my-experiment \
     --wandb-name my-run-name \
     --max-steps 1000
@@ -34,7 +34,7 @@ uv run python examples/train_olmo_pretokenized.py \
 ### Disable WANDB
 ```bash
 uv run python examples/train_olmo_pretokenized.py \
-    --dataset synthetic_demo \
+    --dataset tiny_100k \
     --no-wandb
 ```
 

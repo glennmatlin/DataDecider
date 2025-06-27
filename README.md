@@ -151,7 +151,7 @@ WANDB_PROJECT=finpile_datadecide
 WANDB_ENTITY=your_username
 
 # 2. Run training (monitoring enabled by default)
-uv run python examples/train_olmo_pretokenized.py --dataset synthetic_demo
+uv run python examples/train_olmo_pretokenized.py --dataset tiny_100k
 ```
 
 See [`docs/monitoring.md`](docs/monitoring.md) for complete documentation and [`docs/wandb-quickstart.md`](docs/wandb-quickstart.md) for a quick start guide.

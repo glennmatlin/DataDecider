@@ -323,7 +323,7 @@ def main():
         return
 
     # Analyze token requirements
-    total_tokens = analyze_token_requirements(arxiv_file)
+    analyze_token_requirements(arxiv_file)
 
     # Show config generation
     print("\n" + "=" * 80)

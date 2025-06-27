@@ -683,9 +683,9 @@ class UnifiedTokenizer(MonitoringMixin):
         docs_per_sec, tokens_per_sec = self.stats.get_rate()
 
         summary = f"""
-{'='*60}
+{"=" * 60}
 Tokenization Complete!
-{'='*60}
+{"=" * 60}
 Total Documents:  {self.stats.total_documents:,}
 Total Tokens:     {self.stats.total_tokens:,}
 Total Sequences:  {self.stats.total_sequences:,}
@@ -702,7 +702,7 @@ Output:
   Directory:     {self.output_dir}
   Files:         {self.output_file_index}
   Format:        {self.config.output_format}
-{'='*60}
+{"=" * 60}
 """
 
         if self.config.enable_rich_ui and RICH_AVAILABLE:

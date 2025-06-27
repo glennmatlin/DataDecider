@@ -174,7 +174,7 @@ def main():
     console.print("\n[bold]Loading dataset...[/bold]")
     dataset_path = Path("data/processed/olmo_4m_400M_tokens")
 
-    with console.status("[bold green]Loading dataset...") as status:
+    with console.status("[bold green]Loading dataset..."):
         dataset = DatasetDict.load_from_disk(str(dataset_path))
 
         with open(dataset_path / "metadata.json", "r") as f:

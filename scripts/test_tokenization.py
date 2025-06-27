@@ -77,8 +77,8 @@ def test_sample_file():
 
     print(f"\n✓ Processed {docs_processed} documents in {elapsed:.2f} seconds")
     print(f"  - Total tokens: {total_tokens:,}")
-    print(f"  - Avg tokens/doc: {total_tokens/docs_processed:.0f}")
-    print(f"  - Processing rate: {docs_processed/elapsed:.0f} docs/sec")
+    print(f"  - Avg tokens/doc: {total_tokens / docs_processed:.0f}")
+    print(f"  - Processing rate: {docs_processed / elapsed:.0f} docs/sec")
 
     # Estimate for full dataset
     total_files = 200
@@ -89,8 +89,8 @@ def test_sample_file():
     print("\nEstimates for full dataset:")
     print(f"  - Total documents: ~{total_docs:,}")
     print(f"  - Single-threaded time: ~{est_time_hours:.1f} hours")
-    print(f"  - With 4 workers: ~{est_time_hours/4:.1f} hours")
-    print(f"  - With 8 workers: ~{est_time_hours/8:.1f} hours")
+    print(f"  - With 4 workers: ~{est_time_hours / 4:.1f} hours")
+    print(f"  - With 8 workers: ~{est_time_hours / 8:.1f} hours")
 
 
 def check_disk_space():

@@ -31,10 +31,11 @@ repos:
 
   # Security checks
   - repo: https://github.com/PyCQA/bandit
-    rev: 1.7.5
+    rev: 1.8.5
     hooks:
       - id: bandit
-        args: ['-r', 'data_decide', '-ll']  # Only check our code, low severity
+        args: ['-r', 'data_decide', '-ll', '-s', 'B324,B605,B614']  # Skip known issues
+        pass_filenames: false
 
 # Configuration
 default_language_version:

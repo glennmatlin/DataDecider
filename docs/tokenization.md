@@ -70,37 +70,19 @@ UnifiedTokenizer
 
 #### Batch Mode (Default)
 - Processes documents in configurable batches
-- Optimized for speed: 4,300+ docs/sec
+- Optimized for speed
 - Best for systems with adequate memory
 
 #### Streaming Mode
 - Processes documents one at a time
-- Memory-safe: ~600 docs/sec
+- Memory-safe
 - Ideal for very large files or limited memory
 
 #### Hybrid Mode
 - Combines batch processing with parallel workers
 - Scales linearly with CPU cores
 - Best for production workloads
-
-## Performance
-
-### Benchmarks
-Based on FinPile dataset processing (52GB, 200 files):
-
-| Mode | Docs/sec | Memory Usage | Use Case |
-|------|----------|--------------|----------|
-| Batch | 4,300+ | 3-4 GB | Fast processing, adequate memory |
-| Streaming | 600 | 1-2 GB | Large files, limited memory |
-| Hybrid (4 workers) | 15,000+ | 4-8 GB | Production, multi-core systems |
-
-### 7.2x Performance Improvement
-The unified tokenizer achieved a 7.2x speedup over the original implementation through:
-- Batch tokenization with HuggingFace fast tokenizers (Rust backend)
-- Efficient memory management with chunked processing
-- Parallel processing support
-- Optimized I/O with Arrow/Parquet format
-
+-
 ## Usage Guide
 
 ### Command Line Options

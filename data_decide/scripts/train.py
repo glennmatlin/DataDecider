@@ -196,6 +196,7 @@ def main():
         else:
             # Load raw JSON data
             from datasets import Dataset
+
             raw_data = DataDecideCurator(args.data_path).load_json_data()
             train_dataset = Dataset.from_list([{"text": doc["text"]} for doc in raw_data])
 

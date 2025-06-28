@@ -50,6 +50,10 @@ dev = [
     "pytest>=7.0.0",
     "pytest-cov>=4.0.0",
     "ruff>=0.1.0",
+    "ty>=0.0.1a12",
+    "mypy>=1.13.0",
+    "types-requests>=2.32.0",
+    "types-pyyaml>=6.0.12",
 ]
 telemetry = [
     "gputil>=1.4.0",
@@ -125,3 +129,29 @@ exclude_lines = [
 
 [tool.coverage.html]
 directory = "htmlcov"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+strict_optional = true
+no_implicit_optional = true
+ignore_missing_imports = true
+pretty = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = [
+    "transformers.*",
+    "datasets.*",
+    "accelerate.*",
+    "torch.*",
+    "wandb.*",
+    "tqdm.*",
+]
+ignore_errors = true

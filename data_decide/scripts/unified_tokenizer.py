@@ -24,7 +24,7 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, Iterator, List, Literal, Optional, Set, Tuple, Union
 
 import psutil
 import pyarrow as pa
@@ -93,9 +93,9 @@ class TokenizationConfig:
     # Advanced
     verify_checksums: bool = True
     save_metadata: bool = True
-    compression: str = None  # gzip, snappy, None
+    compression: Optional[Literal["gzip", "snappy", "zstd"]] = None
 
-    def to_dict(self) -> Dict:
+    def to_dict(self) -> Dict[str, Any]:
         return asdict(self)
 
 
@@ -135,7 +135,9 @@ class CheckpointManager:
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
         self.checkpoint_file = self.checkpoint_dir / "progress.json"
 
-    def save(self, completed_files: List[str], stats: TokenizationStats, metadata: Dict = None):
+    def save(
+        self, completed_files: List[str], stats: TokenizationStats, metadata: Optional[Dict[str, Any]] = None
+    ) -> None:
         """Save checkpoint atomically"""
         checkpoint = {
             "completed_files": completed_files,
@@ -150,7 +152,7 @@ class CheckpointManager:
             json.dump(checkpoint, f, indent=2)
         temp_file.replace(self.checkpoint_file)
 
-    def load(self) -> Optional[Dict]:
+    def load(self) -> Optional[Dict[str, Any]]:
         """Load latest checkpoint"""
         if self.checkpoint_file.exists():
             with open(self.checkpoint_file, "r") as f:
@@ -174,7 +176,7 @@ class MonitoringMixin:
         self.progress_bar = None
         self.live_display = None
 
-    def start_monitoring(self, total_files: int):
+    def start_monitoring(self, total_files: int) -> None:
         """Start monitoring display"""
         if self.config.enable_rich_ui and RICH_AVAILABLE:
             self.live_display = Live(self._create_rich_display(), refresh_per_second=1)
@@ -182,7 +184,7 @@ class MonitoringMixin:
         else:
             self.progress_bar = tqdm(total=total_files, desc="Processing files")
 
-    def update_monitoring(self, **kwargs):
+    def update_monitoring(self, **kwargs: Union[int, float]) -> None:
         """Update monitoring display"""
         # Update stats
         for key, value in kwargs.items():
@@ -200,7 +202,7 @@ class MonitoringMixin:
             docs_per_sec, _ = self.stats.get_rate()
             self.progress_bar.set_postfix({"docs/s": f"{docs_per_sec:.0f}"})
 
-    def stop_monitoring(self):
+    def stop_monitoring(self) -> None:
         """Stop monitoring display"""
         if self.live_display:
             self.live_display.stop()
@@ -230,7 +232,9 @@ class MonitoringMixin:
 
 
 # Worker function must be at module level for pickling
-def _process_file_worker_standalone(args: Tuple[Path, TokenizationConfig]) -> Tuple[List[List[int]], Dict]:
+def _process_file_worker_standalone(
+    args: Tuple[Path, TokenizationConfig],
+) -> Tuple[List[List[int]], Dict[str, Union[int, float]]]:
     """Standalone worker function for parallel processing that can be pickled"""
     file_path, config = args
 
@@ -759,7 +763,7 @@ class UnifiedTokenizer(MonitoringMixin):
         # Force garbage collection
         gc.collect()
 
-    def _save_checkpoint(self, completed_files: set = None):
+    def _save_checkpoint(self, completed_files: Optional[Set[str]] = None) -> None:
         """Save checkpoint"""
         if not self.config.enable_checkpoint:
             return
@@ -829,7 +833,7 @@ Output:
 {"=" * 60}
 """
 
-        if self.config.enable_rich_ui and RICH_AVAILABLE:
+        if self.config.enable_rich_ui and RICH_AVAILABLE and console is not None:
             console.print(Panel(summary, title="✅ Summary", border_style="green"))
         else:
             print(summary)
@@ -907,6 +911,7 @@ def main():
     logging.getLogger().setLevel(getattr(logging, args.log_level))
 
     # Create config
+    # Note: input_path and output_path are required positional arguments from argparse
     config = TokenizationConfig(**vars(args))
 
     # Run tokenization

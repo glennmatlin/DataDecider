@@ -916,3 +916,22 @@ Learning:
 2. The solution is to use module-level functions instead of instance methods for parallel processing.
 3. When creating tests for tokenization, ensure test documents are long enough to pass any minimum length thresholds (e.g., 10% of max_seq_length).
 4. PyTorch import conflicts can be worked around by using direct imports and standalone test scripts.
+
+[2025-06-28 00:40] Downgraded Python from 3.13 to 3.12 for PyTorch Compatibility
+
+Context: User requested downgrading from Python 3.13 to 3.12 since that's the latest version supported by PyTorch.
+
+Action:
+1. Created `.python-version` file with `3.12` using `uv python pin 3.12`
+2. Created new virtual environment with Python 3.12.10 using `uv venv --python 3.12`
+3. Reinstalled the project and all dependencies with `uv pip install -e .`
+4. Verified PyTorch 2.7.1+cu126 is working correctly in Python 3.12
+5. Installed development dependencies with `uv pip install -e ".[dev]"`
+
+Result:
+- Successfully downgraded to Python 3.12.10
+- PyTorch 2.7.1 with CUDA 12.6 support installed and working
+- All dependencies reinstalled without issues
+- Project is now fully compatible with PyTorch ecosystem
+
+Learning: PyTorch has specific Python version requirements. As of this date, PyTorch supports up to Python 3.12 but not 3.13. Always check PyTorch compatibility matrix before choosing Python version for ML projects.

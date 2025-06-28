@@ -935,3 +935,45 @@ Result:
 - Project is now fully compatible with PyTorch ecosystem
 
 Learning: PyTorch has specific Python version requirements. As of this date, PyTorch supports up to Python 3.12 but not 3.13. Always check PyTorch compatibility matrix before choosing Python version for ML projects.
+
+[2025-06-28 01:30] Added Type Safety Infrastructure with ty and mypy
+
+Context: User requested installing `ty` to dev environment and improving type safety across the codebase.
+
+Action:
+1. Added `ty` (v0.0.1a12) and `mypy` to dev dependencies in pyproject.toml
+2. Fixed type safety issues in unified_tokenizer.py:
+   - Added proper Optional types for nullable parameters
+   - Fixed generic type parameters (Dict → Dict[str, Any])
+   - Added Literal types for compression options
+   - Fixed console.print safety check
+   - Added return type annotations
+
+3. Fixed type issues in other files:
+   - train.py: Removed invalid callbacks parameter
+   - evaluator.py: Fixed Dataset/DatasetDict handling with proper type casting
+
+4. Created comprehensive documentation:
+   - TYPE_SAFETY_GUIDE.md with patterns and best practices
+   - Added mypy configuration to pyproject.toml
+
+5. Set up ty configuration (ty.toml was removed due to config issues)
+
+Result:
+- unified_tokenizer.py: Down from 5 errors to 1 false positive
+- evaluator.py: All type issues resolved
+- train.py: Fixed incorrect API usage
+- Type checking infrastructure ready for CI/CD integration
+
+Type Issues Fixed:
+- Invalid assignment: `compression: str = None` → `Optional[Literal["gzip", "snappy", "zstd"]]`
+- Invalid parameter defaults: Added Optional types
+- Missing type parameters: Dict → Dict[str, Any]
+- Unsafe attribute access: Added proper None checks
+
+Learning:
+1. ty is very fast but still in alpha - expect some false positives
+2. Always use Optional[T] for nullable parameters, not T = None
+3. Be specific with generic types - Dict[str, Any] not just Dict
+4. Type casting with cast() helps when you know more than the type checker
+5. Dataset loading can return different types - always check isinstance()

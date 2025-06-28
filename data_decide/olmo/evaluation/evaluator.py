@@ -1,10 +1,10 @@
 """OLMo model evaluator for benchmarking."""
 
-from typing import Dict
+from typing import Dict, cast
 
 import numpy as np
 import torch
-from datasets import load_dataset
+from datasets import Dataset, DatasetDict, load_dataset
 from tqdm import tqdm
 
 from ..utils import get_logger
@@ -64,6 +64,11 @@ class OLMoEvaluator:
         """Evaluate multiple choice tasks."""
         # Load dataset
         dataset = load_dataset(task_name, split="validation")
+        # Handle different dataset types
+        if isinstance(dataset, DatasetDict):
+            dataset = dataset["validation"]
+        dataset = cast(Dataset, dataset)  # Type assertion for ty
+
         if len(dataset) > 1000:  # Sample for efficiency
             dataset = dataset.select(range(1000))
 
@@ -131,7 +136,7 @@ class OLMoEvaluator:
             score = self._evaluate_multiple_choice(f"mmlu_{subject}")
             scores.append(score)
 
-        return np.mean(scores)
+        return float(np.mean(scores))
 
     def _evaluate_truthfulqa(self) -> float:
         """Evaluate on TruthfulQA benchmark."""
@@ -142,6 +147,10 @@ class OLMoEvaluator:
         """Evaluate on GSM8K math benchmark."""
         # Simplified evaluation - in practice would use more sophisticated parsing
         dataset = load_dataset("gsm8k", "main", split="test")
+        # Handle different dataset types
+        if isinstance(dataset, DatasetDict):
+            dataset = dataset["test"]
+        dataset = cast(Dataset, dataset)  # Type assertion for ty
         dataset = dataset.select(range(200))  # Sample for efficiency
 
         correct = 0

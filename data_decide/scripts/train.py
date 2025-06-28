@@ -171,13 +171,13 @@ def main():
             )
             callbacks.append(checkpoint_callback)
 
-            # Initialize trainer with callbacks
+            # Initialize trainer
+            # TODO: Add callback support to OLMoTrainer
             trainer = OLMoTrainer(
                 config=training_config,
                 train_dataset=train_dataset,
                 eval_dataset=eval_dataset,
                 tokenizer=tokenizer,
-                callbacks=callbacks,
             )
 
             # Start training

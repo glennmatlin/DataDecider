@@ -1,0 +1,10 @@
+{"text": ""}
+{"text": "   "}
+{"text": "A"}
+{"text": "Short sentence."}
+{"invalid": "json", "structure": "missing text field"}
+{"text": "Normal document with regular content that should be processed correctly."}
+{"text": "文档中包含中文字符 and mixed languages avec français και ελληνικά"}
+{"text": "Special chars: \n\t\r and \"quotes\" and 'apostrophes' and \\backslashes\\"}
+{"text": "🚀 Emojis 😊 and symbols ♠♣♥♦ should be handled properly! 🎉"}
+{"text": "Very " + "long " * 10000 + "document that exceeds normal length limits and should be split into multiple sequences when tokenized properly."}

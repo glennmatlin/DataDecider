@@ -1,0 +1,9 @@
+This is a plain text file used for testing the tokenization system.
+
+It contains multiple paragraphs of text that should be processed as a single document when using text input format.
+
+The tokenizer should handle this format differently from JSONL files, treating the entire file contents as one document rather than line-by-line processing.
+
+Special characters like quotes "example", apostrophes 'test', and various symbols !@#$%^&*() should be handled correctly.
+
+This format is useful for processing raw text data without the need for JSON structure.

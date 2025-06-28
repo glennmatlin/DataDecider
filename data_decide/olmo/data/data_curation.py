@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+import random
 from typing import Any, Dict, List
 
 import numpy as np
@@ -87,24 +88,24 @@ class DataDecideCurator:
 
     def compute_data_statistics(self, data: List[Dict[str, Any]]) -> Dict[str, float]:
         """Compute statistics for data quality assessment."""
-        stats = {
-            "total_documents": len(data),
-            "avg_length": 0,
-            "vocabulary_size": 0,
-            "deduplication_rate": 0,
-            "quality_score": 0,
+        stats: Dict[str, float] = {
+            "total_documents": float(len(data)),
+            "avg_length": 0.0,
+            "vocabulary_size": 0.0,
+            "deduplication_rate": 0.0,
+            "quality_score": 0.0,
         }
 
         # Length statistics
         lengths = [len(doc["text"]) for doc in data]
-        stats["avg_length"] = np.mean(lengths)
-        stats["std_length"] = np.std(lengths)
+        stats["avg_length"] = float(np.mean(lengths))
+        stats["std_length"] = float(np.std(lengths))
 
         # Vocabulary analysis
         vocab = set()
         for doc in data[:10000]:  # Sample for efficiency
             vocab.update(doc["text"].split())
-        stats["vocabulary_size"] = len(vocab)
+        stats["vocabulary_size"] = float(len(vocab))
 
         # Deduplication analysis
         hashes = set()
@@ -114,7 +115,7 @@ class DataDecideCurator:
             if doc_hash in hashes:
                 duplicates += 1
             hashes.add(doc_hash)
-        stats["deduplication_rate"] = duplicates / len(data)
+        stats["deduplication_rate"] = float(duplicates) / float(len(data)) if data else 0.0
 
         return stats
 
@@ -148,43 +149,31 @@ class DataDecideCurator:
             for i, (strategy_name, sample_size) in enumerate(sampling_strategies[:num_experiments]):
                 if sample_size > dataset_size:
                     sample_size = dataset_size
-
-                # Random sampling
-                indices = np.random.choice(dataset_size, size=sample_size, replace=False)
+                indices = random.sample(range(dataset_size), sample_size)
                 subset = train_dataset.select(indices)
-
                 proxy_datasets.append(subset)
-
             return proxy_datasets
 
         # Original implementation for non-tokenized data
         proxy_datasets = []
 
         for i in range(num_experiments):
-            # Different sampling strategies
             if i == 0:
-                # Random sampling
-                sampled = np.random.choice(data, size=min(10000, len(data)), replace=False)
+                sampled = random.sample(data, min(10000, len(data)))
             elif i == 1:
-                # Length-based sampling (prefer medium length)
                 lengths = np.array([len(doc["text"]) for doc in data])
                 weights = np.exp(-((lengths - np.median(lengths)) ** 2) / (2 * np.std(lengths) ** 2))
                 weights /= weights.sum()
-                sampled = np.random.choice(data, size=min(10000, len(data)), replace=False, p=weights)
+                # Weighted sampling using random.choices
+                sampled = random.choices(data, weights=weights.tolist(), k=min(10000, len(data)))
             elif i == 2:
-                # Quality-based sampling (using simple heuristics)
                 sampled = [doc for doc in data if self._quality_filter(doc)][:10000]
             elif i == 3:
-                # Diversity-based sampling
                 sampled = self._diversity_sample(data, 10000)
             else:
-                # Mixed strategy
                 sampled = self._mixed_strategy_sample(data, 10000)
-
-            # Convert to HuggingFace Dataset
             dataset = Dataset.from_list([{"text": doc["text"], "uuid": doc["uuid"]} for doc in sampled])
             proxy_datasets.append(dataset)
-
         return proxy_datasets
 
     def _quality_filter(self, doc: Dict[str, Any]) -> bool:
@@ -205,7 +194,7 @@ class DataDecideCurator:
         from sklearn.feature_extraction.text import TfidfVectorizer
 
         # Sample subset for efficiency
-        subset = np.random.choice(data, size=min(50000, len(data)), replace=False)
+        subset = random.sample(data, min(50000, len(data)))
         texts = [doc["text"][:1000] for doc in subset]  # Use first 1000 chars
 
         # TF-IDF vectorization
@@ -222,14 +211,14 @@ class DataDecideCurator:
         for i in range(n_clusters):
             cluster_docs = [subset[j] for j in range(len(subset)) if labels[j] == i]
             if cluster_docs:
-                sampled.append(np.random.choice(cluster_docs))
+                sampled.append(random.choice(cluster_docs))
 
         return sampled
 
     def _mixed_strategy_sample(self, data: List[Dict[str, Any]], n_samples: int) -> List[Dict[str, Any]]:
         """Combine multiple sampling strategies."""
         strategies = [
-            lambda d, n: np.random.choice(d, size=n, replace=False),
+            lambda d, n: random.sample(d, n),
             lambda d, n: [doc for doc in d if self._quality_filter(doc)][:n],
             lambda d, n: self._diversity_sample(d, n),
         ]
@@ -271,7 +260,8 @@ class DataDecideCurator:
         if "input_ids" in dataset.column_names:
             # Calculate entropy-based metric as proxy for perplexity
             all_tokens = []
-            for item in dataset.select(range(min(1000, len(dataset)))):
+            sample = dataset.select(range(min(1000, len(dataset))))
+            for item in list(sample):
                 all_tokens.extend(item["input_ids"])
 
             # Calculate token frequency distribution
@@ -302,11 +292,11 @@ class DataDecideCurator:
         to predict if it will lead to better model performance.
         """
         if "input_ids" in dataset.column_names:
-            # For tokenized data, compute type-token ratio
             all_tokens = []
             sample_size = min(5000, len(dataset))
-            for i in range(sample_size):
-                all_tokens.extend(dataset[i]["input_ids"])
+            sample = dataset.select(range(sample_size))
+            for item in list(sample):
+                all_tokens.extend(item["input_ids"])
 
             unique_tokens = len(set(all_tokens))
             total_tokens = len(all_tokens)
@@ -326,12 +316,12 @@ class DataDecideCurator:
             return min(1.0, diversity * 2)  # Scale to 0-1 range
 
         # For text data
-        texts = [item["text"] for item in dataset.select(range(min(1000, len(dataset))))]
+        sample = dataset.select(range(min(1000, len(dataset))))
+        texts = [item["text"] for item in list(sample)]
         vocab = set()
         for text in texts:
             vocab.update(text.lower().split())
-
-        return min(1.0, len(vocab) / 10000)  # Normalize by expected vocab size
+        return min(1.0, len(vocab) / 10000)
 
     def _compute_quality_score(self, dataset: Dataset) -> float:
         """Compute quality score based on various heuristics.
@@ -340,37 +330,29 @@ class DataDecideCurator:
         which data will produce better models.
         """
         if "input_ids" in dataset.column_names:
-            # For pre-tokenized arXiv data, we assume high quality
-            # We can check for things like sequence length distribution
             lengths = []
             sample_size = min(1000, len(dataset))
-            for i in range(sample_size):
-                # Count non-padding tokens
-                tokens = dataset[i]["input_ids"]
-                if isinstance(tokens, list):
-                    length = len([t for t in tokens if t != 0])  # Assuming 0 is padding
+            sample = dataset.select(range(sample_size))
+            for item in list(sample):
+                input_ids = item["input_ids"]
+                if isinstance(input_ids, list):
+                    length = len([t for t in input_ids if t != 0])
                 else:
-                    length = len(tokens)
+                    length = len(input_ids)
                 lengths.append(length)
-
-            # Good quality data has consistent, reasonable length sequences
             avg_length = np.mean(lengths)
             std_length = np.std(lengths)
-
-            # Quality based on length consistency and reasonable average
             if 500 < avg_length < 1800 and std_length < 500:
                 quality = 0.9
             elif 100 < avg_length < 2000:
                 quality = 0.8
             else:
                 quality = 0.7
-
             return quality
-
         # For text data, use original heuristics
         return 0.85  # Default high quality for arXiv
 
-    def select_best_data_recipe(self, scores: Dict[str, float]) -> str:
+    def select_best_data_recipe(self, scores: Dict[str, dict]) -> str:
         """Select best data recipe based on proxy experiments."""
         best_dataset = max(scores.items(), key=lambda x: x[1]["combined_score"])
         return best_dataset[0]

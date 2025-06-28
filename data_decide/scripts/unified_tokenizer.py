@@ -229,6 +229,126 @@ class MonitoringMixin:
         return Panel(stats_table, title="🚀 Tokenization Progress", border_style="blue")
 
 
+# Worker function must be at module level for pickling
+def _process_file_worker_standalone(args: Tuple[Path, TokenizationConfig]) -> Tuple[List[List[int]], Dict]:
+    """Standalone worker function for parallel processing that can be pickled"""
+    file_path, config = args
+
+    # Re-initialize tokenizer in worker process
+    try:
+        tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_name)
+    except ValueError as e:
+        if "trust_remote_code" in str(e):
+            tokenizer = AutoTokenizer.from_pretrained(config.tokenizer_name, trust_remote_code=True)
+        else:
+            raise
+
+    sequences = []
+    stats = {
+        "total_documents": 0,
+        "total_tokens": 0,
+        "total_sequences": 0,
+        "bytes_processed": file_path.stat().st_size,
+        "files_processed": 1,
+    }
+
+    # Process file using the same logic as UnifiedTokenizer
+    chunk_size = config.chunk_size
+
+    try:
+        # Read and process documents
+        if file_path.suffix == ".gz":
+            with gzip.open(file_path, "rt") as f:
+                documents = []
+                for line in f:
+                    if line.strip():
+                        try:
+                            documents.append(json.loads(line))
+                            if len(documents) >= chunk_size:
+                                texts = [doc.get("text", "") for doc in documents]
+                                texts = [t for t in texts if t.strip()]
+                                if texts:
+                                    chunk_sequences = _batch_tokenize_texts_standalone(texts, tokenizer, config)
+                                    sequences.extend(chunk_sequences)
+                                    stats["total_documents"] += len(texts)
+                                    stats["total_tokens"] += sum(len(seq) for seq in chunk_sequences)
+                                    stats["total_sequences"] += len(chunk_sequences)
+                                documents = []
+                        except json.JSONDecodeError:
+                            continue
+        else:
+            with open(file_path, "r") as f:
+                documents = []
+                for line in f:
+                    if line.strip():
+                        try:
+                            documents.append(json.loads(line))
+                            if len(documents) >= chunk_size:
+                                texts = [doc.get("text", "") for doc in documents]
+                                texts = [t for t in texts if t.strip()]
+                                if texts:
+                                    chunk_sequences = _batch_tokenize_texts_standalone(texts, tokenizer, config)
+                                    sequences.extend(chunk_sequences)
+                                    stats["total_documents"] += len(texts)
+                                    stats["total_tokens"] += sum(len(seq) for seq in chunk_sequences)
+                                    stats["total_sequences"] += len(chunk_sequences)
+                                documents = []
+                        except json.JSONDecodeError:
+                            continue
+
+        # Process remaining documents
+        if documents:
+            texts = [doc.get("text", "") for doc in documents]
+            texts = [t for t in texts if t.strip()]
+            if texts:
+                chunk_sequences = _batch_tokenize_texts_standalone(texts, tokenizer, config)
+                sequences.extend(chunk_sequences)
+                stats["total_documents"] += len(texts)
+                stats["total_tokens"] += sum(len(seq) for seq in chunk_sequences)
+                stats["total_sequences"] += len(chunk_sequences)
+
+    except Exception as e:
+        logger.error(f"Error in worker processing {file_path}: {e}")
+        raise
+
+    return sequences, stats
+
+
+def _batch_tokenize_texts_standalone(texts: List[str], tokenizer, config: TokenizationConfig) -> List[List[int]]:
+    """Standalone batch tokenization function"""
+    # Tokenize in batch
+    encodings = tokenizer(
+        texts,
+        add_special_tokens=False,
+        truncation=False,
+        padding=False,
+        return_attention_mask=False,
+        return_token_type_ids=False,
+    )
+
+    all_sequences = []
+
+    # Process each encoding
+    for tokens in encodings["input_ids"]:
+        # Break into sequences of max length
+        for i in range(0, len(tokens), config.max_seq_length):
+            seq = tokens[i : i + config.max_seq_length]
+
+            # Pad or truncate
+            if len(seq) < config.max_seq_length:
+                # Only use sequences that are at least 10% of max length
+                if len(seq) >= config.max_seq_length * 0.1:
+                    if config.append_eos and len(seq) < config.max_seq_length:
+                        seq.append(tokenizer.eos_token_id)
+                    all_sequences.append(seq)
+            else:
+                if config.append_eos:
+                    seq[-1] = tokenizer.eos_token_id
+                all_sequences.append(seq)
+
+    return all_sequences
+
+
 class UnifiedTokenizer(MonitoringMixin):
     """
     Unified tokenizer combining best features from all approaches.
@@ -455,8 +575,11 @@ class UnifiedTokenizer(MonitoringMixin):
     def _parallel_hybrid_process(self, files: List[Path], completed_files: set):
         """Parallel processing for hybrid mode"""
         with ProcessPoolExecutor(max_workers=self.config.num_workers) as executor:
-            # Submit jobs
-            future_to_file = {executor.submit(self._process_file_worker, file_path): file_path for file_path in files}
+            # Submit jobs with config - use standalone function
+            future_to_file = {
+                executor.submit(_process_file_worker_standalone, (file_path, self.config)): file_path
+                for file_path in files
+            }
 
             # Process results
             for future in as_completed(future_to_file):
@@ -538,14 +661,15 @@ class UnifiedTokenizer(MonitoringMixin):
 
         all_sequences = []
         for input_ids in encodings["input_ids"]:
-            # Add EOS if needed
-            if self.config.append_eos and (len(input_ids) == 0 or input_ids[-1] != tokenizer.eos_token_id):
-                input_ids.append(tokenizer.eos_token_id)
-
             # Split into sequences
             for i in range(0, len(input_ids), self.config.max_seq_length):
                 sequence = input_ids[i : i + self.config.max_seq_length]
-                if len(sequence) == self.config.max_seq_length:
+
+                # Only use sequences that are at least 10% of max length
+                if len(sequence) >= self.config.max_seq_length * 0.1:
+                    # Add EOS if needed and there's room
+                    if self.config.append_eos and len(sequence) < self.config.max_seq_length:
+                        sequence.append(tokenizer.eos_token_id)
                     all_sequences.append(sequence)
 
         return all_sequences
